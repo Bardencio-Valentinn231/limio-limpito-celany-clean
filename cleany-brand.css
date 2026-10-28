@@ -190,13 +190,13 @@ header a[href="#productos"] .fa-bolt { color: var(--clean-lime) !important; }
     transform: translateY(-2px);
 }
 #inicio a[href="#productos"] .fa-spray-can-sparkles { color: var(--clean-lime) !important; }
-#inicio a[href="#checkout"] {
+#inicio a[href="#nosotros"] {
     color: var(--clean-green) !important;
     background: rgba(255,254,249,.8) !important;
     border: 1px solid #cddccf !important;
     border-radius: 8px !important;
 }
-#inicio a[href="#checkout"]:hover { background: #e9f1e6 !important; }
+#inicio a[href="#nosotros"]:hover { background: #e9f1e6 !important; }
 #inicio .grid.grid-cols-3 {
     margin-top: 2rem;
     padding-top: 1.25rem !important;
