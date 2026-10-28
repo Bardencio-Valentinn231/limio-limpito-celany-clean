@@ -228,6 +228,13 @@ function updateCartUI() {
 }
 
 // Manejar el submit del Formulario
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[char]));
+}
+
+// Manejar el submit del Formulario y guardar el pedido en este navegador.
 function handleFormSubmit(event) {
     event.preventDefault();
 
@@ -236,27 +243,61 @@ function handleFormSubmit(event) {
         return;
     }
 
-    const nombre = document.getElementById('nombre').value;
-    const email = document.getElementById('email').value;
-    const dni = document.getElementById('dni').value;
-    const cuit = document.getElementById('cuit').value;
-    const direccion = document.getElementById('direccion').value;
-    const ciudad = document.getElementById('ciudad').value;
-    
+    const getValue = id => document.getElementById(id)?.value?.trim() || '';
     const formaPagoEl = document.querySelector('input[name="formaPago"]:checked');
-    const formaPago = formaPagoEl ? formaPagoEl.value : "No especificado";
-    const total = document.getElementById('totalPrice').innerText;
+    const total = cart.reduce((acc, item) => acc + (Number(item.price) * Number(item.quantity)), 0);
+    const order = {
+        id: `CC-${Date.now().toString(36).toUpperCase()}`,
+        createdAt: new Date().toISOString(),
+        customer: {
+            nombre: getValue('nombre'),
+            email: getValue('email'),
+            telefono: getValue('telefono'),
+            dni: getValue('dni'),
+            cuit: getValue('cuit'),
+            iva: getValue('iva'),
+            direccion: getValue('direccion'),
+            piso: getValue('piso'),
+            ciudad: getValue('ciudad'),
+            provincia: getValue('provincia'),
+            cp: getValue('cp')
+        },
+        formaPago: formaPagoEl ? formaPagoEl.value : "No especificado",
+        items: cart.map(item => ({
+            id: item.id, name: item.name, category: item.category,
+            price: Number(item.price), quantity: Number(item.quantity)
+        })),
+        subtotal: total,
+        total: total,
+        currency: 'ARS',
+        status: 'Recibido'
+    };
+
+    try {
+        const storageKey = 'cleanyCleanOrders';
+        const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        const orders = Array.isArray(saved) ? saved : [];
+        orders.unshift(order);
+        localStorage.setItem(storageKey, JSON.stringify(orders));
+    } catch (error) {
+        console.error('No se pudo guardar el pedido en este navegador:', error);
+        alert('No se pudo guardar el pedido en este navegador. Verifica el almacenamiento del navegador e inténtalo nuevamente.');
+        return;
+    }
 
     const ticketContainer = document.getElementById('ticketDetails');
     if (ticketContainer) {
         ticketContainer.innerHTML = `
-            <p><strong>Cliente:</strong> ${nombre}</p>
-            <p><strong>DNI:</strong> ${dni} | <strong>CUIL/CUIT:</strong> ${cuit}</p>
-            <p><strong>Email:</strong> ${email}</p>
-            <p><strong>Dirección:</strong> ${direccion}, ${ciudad}</p>
-            <p><strong>Método de Pago:</strong> ${formaPago}</p>
+            <p><strong>Número de pedido:</strong> ${escapeHtml(order.id)}</p>
+            <p><strong>Cliente:</strong> ${escapeHtml(order.customer.nombre)}</p>
+            <p><strong>DNI:</strong> ${escapeHtml(order.customer.dni)} | <strong>CUIL/CUIT:</strong> ${escapeHtml(order.customer.cuit)}</p>
+            <p><strong>Email:</strong> ${escapeHtml(order.customer.email)}</p>
+            <p><strong>Teléfono:</strong> ${escapeHtml(order.customer.telefono)}</p>
+            <p><strong>Dirección:</strong> ${escapeHtml(order.customer.direccion)} ${escapeHtml(order.customer.piso)}, ${escapeHtml(order.customer.ciudad)}, ${escapeHtml(order.customer.provincia)} (${escapeHtml(order.customer.cp)})</p>
+            <p><strong>Condición IVA:</strong> ${escapeHtml(order.customer.iva)}</p>
+            <p><strong>Método de Pago:</strong> ${escapeHtml(order.formaPago)}</p>
             <div class="border-t border-slate-700 pt-2 mt-2">
-                <p><strong>Total Abonado:</strong> <span class="text-cyan-300 font-bold text-sm">${total}</span></p>
+                <p><strong>Total del pedido:</strong> <span class="text-cyan-300 font-bold text-sm">$ ${order.total.toLocaleString('es-AR')}</span></p>
             </div>
         `;
     }
@@ -266,7 +307,7 @@ function handleFormSubmit(event) {
 
     cart = [];
     updateCartUI();
-    
+
     const form = document.getElementById('checkoutForm');
     if (form) form.reset();
 }
