@@ -12,11 +12,11 @@ La tienda y el gestor comparten un módulo de pedidos. Sin configurar una base r
 
 En el SQL Editor, ejecutá esta consulta reemplazando el correo de ejemplo por el correo exacto del usuario creado:
 
-\`\`\`sql
+```sql
 update auth.users
 set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}'::jsonb
 where email = 'TU-CORREO-DE-ADMINISTRACION@example.com';
-\`\`\`
+```
 
 Comprobá que la consulta afectó una fila. Cerrá la sesión del gestor y volvé a iniciar sesión para que Supabase emita una sesión con el rol actualizado.
 
