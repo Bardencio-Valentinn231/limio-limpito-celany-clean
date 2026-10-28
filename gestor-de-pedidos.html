@@ -43,6 +43,7 @@
         <button class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 font-bold text-white hover:brightness-110" type="submit">Entrar <i class="fa-solid fa-arrow-right ml-2"></i></button>
       </form>
       <p id="loginModeNotice" class="mt-5 text-xs text-amber-200/80">Modo local: no sincroniza compras entre navegadores.</p>
+      <p id="localStorageDiagnostic" class="mt-3 rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-xs leading-relaxed text-slate-300" role="status"></p>
     </section>
 
     <section id="dashboard" class="hidden space-y-6">
@@ -114,6 +115,13 @@
       $('loginModeNotice').textContent = cloud
         ? 'Conexión central configurada. Solo las cuentas autorizadas de administrador pueden leer pedidos.'
         : 'Modo local: el acceso por contraseña es solo una barrera visual y no sincroniza pedidos entre dispositivos. Configurá Supabase para producción.';
+      const localCount = window.CleanyOrders ? window.CleanyOrders.readLocalOrders().length : 0;
+      $('localStorageDiagnostic').textContent = cloud
+        ? 'Supabase está configurado. Los pedidos centrales se cargan después del inicio de sesión.'
+        : 'Diagnóstico de esta página: origen ' + window.location.origin + '; pedidos guardados en este navegador/origen: ' + localCount + '. ' +
+          (localCount === 0
+            ? 'No hay pedidos locales aquí. Las compras hechas en otra URL, otro navegador o dispositivo no pueden leerse desde este almacenamiento. Para centralizar compras, completá orders-config.js y configurá Supabase.'
+            : 'Estos pedidos locales deberían aparecer al entrar. Si faltan compras, verificá que la tienda se haya abierto desde el mismo origen mostrado arriba. Para sincronización entre dispositivos, configurá Supabase.');
     }
     configureLoginMode();
 
