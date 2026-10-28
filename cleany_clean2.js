@@ -112,6 +112,7 @@ function createBubbleCurtainBubbles() {
             panel.appendChild(bubble);
         }
     });
+    curtain.classList.add('is-opening');
 }
 
 // Emitir burbujas desde ambos bordes al subir o bajar por la portada.
