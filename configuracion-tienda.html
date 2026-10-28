@@ -235,7 +235,7 @@
       if (!products.length) throw new Error('Agregá al menos un producto o servicio al catálogo.');
       for (const product of products) {
         if (!product.name) throw new Error('Todos los artículos deben tener un nombre.');
-        if (!Number.isFinite(product.price) || product.price < 0) throw new Error('Revisá los precios: deben ser números mayores o iguales a cero.');
+        if (String($('productsEditor').querySelector('[data-product-id="' + product.id + '"] [data-field="price"]').value).trim() === '' || !Number.isFinite(product.price) || product.price < 0) throw new Error('Revisá los precios: deben ser números mayores o iguales a cero.');
         if (product.stock !== null && (!Number.isInteger(product.stock) || product.stock < 0)) throw new Error('La cantidad disponible debe ser un entero mayor o igual a cero, o quedar vacía.');
       }
       const ids = products.map(p => p.id);
