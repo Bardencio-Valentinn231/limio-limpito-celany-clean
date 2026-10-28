@@ -145,6 +145,61 @@
     return combined;
   }
 
+  var SETTINGS_KEY = 'cleanyCleanSiteSettings';
+
+  function readLocalSiteSettings() {
+    try {
+      var saved = global.localStorage.getItem(SETTINGS_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch (error) {
+      console.error('No se pudo leer la configuración local del sitio:', error);
+      return null;
+    }
+  }
+
+  async function getSiteSettings() {
+    var localSettings = readLocalSiteSettings();
+    if (!isCloudConfigured()) return localSettings;
+
+    try {
+      var result = await getClient().from('site_settings').select('data').eq('id', 'default').maybeSingle();
+      if (result.error) throw result.error;
+      if (result.data && result.data.data && typeof result.data.data === 'object') {
+        try { global.localStorage.setItem(SETTINGS_KEY, JSON.stringify(result.data.data)); } catch (_) {}
+        return result.data.data;
+      }
+      return localSettings;
+    } catch (error) {
+      console.warn('No se pudo leer la configuración central; se usa la configuración local disponible:', error);
+      return localSettings;
+    }
+  }
+
+  async function saveSiteSettings(settings) {
+    if (!settings || typeof settings !== 'object' || !Array.isArray(settings.products)) {
+      throw new Error('La configuración no tiene un formato válido.');
+    }
+
+    if (isCloudConfigured()) {
+      var sb = getClient();
+      var sessionResult = await sb.auth.getSession();
+      var user = sessionResult.data && sessionResult.data.session && sessionResult.data.session.user;
+      if (!user || !user.app_metadata || user.app_metadata.role !== 'admin') {
+        throw new Error('Iniciá sesión como administrador para guardar la configuración central.');
+      }
+
+      var result = await sb.from('site_settings').upsert({
+        id: 'default',
+        data: settings,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
+      if (result.error) throw result.error;
+    }
+
+    global.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    return { local: true, cloud: isCloudConfigured() };
+  }
+
   global.CleanyOrders = {
     storageKey: STORAGE_KEY,
     isCloudConfigured: isCloudConfigured,
@@ -153,6 +208,9 @@
     syncPendingOrders: syncPendingOrders,
     signInAdmin: signInAdmin,
     signOutAdmin: signOutAdmin,
-    getAdminOrders: getAdminOrders
+    getAdminOrders: getAdminOrders,
+    getSiteSettings: getSiteSettings,
+    saveSiteSettings: saveSiteSettings,
+    readLocalSiteSettings: readLocalSiteSettings
   };
 })(window);
