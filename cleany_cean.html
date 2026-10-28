@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cleany Clean - Servicios y Productos de Limpieza Impecable</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="cleany_clean2.js">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            blue: '#0072ff',
+                            cyan: '#00c6ff',
+                            darkBlue: '#0f172a',
+                            gold: '#ffb703',
+                            accent: '#38bdf8'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Ambientación e Identidad Visual Cleany Clean */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0b132b 0%, #1c2541 50%, #0a192f 100%);
+            color: #f1f5f9;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Efecto de marco arcoíris irisado como en el logo */
+        .rainbow-border {
+            border: 2px solid transparent;
+            background-image: linear-gradient(#0f172a, #0f172a), 
+                              radial-gradient(circle at top left, #ff007f, #7928ca, #0072ff, #00c6ff, #ffb703);
+            background-origin: border-box;
+            background-clip: padding-box, border-box;
+        }
+
+        /* Burbujas Flotantes de fondo con física suave */
+        .bubbles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -100px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(0, 198, 255, 0.3));
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0, 198, 255, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.8);
+            animation: floatUp infinite linear;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) scale(1) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-120vh) scale(1.3) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .glass-card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .glass-card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 30px -10px rgba(0, 198, 255, 0.3);
+            border-color: rgba(0, 198, 255, 0.4);
+        }
+
+        /* Animación de destello */
+        .sparkle {
+            animation: pulseSparkle 2s infinite ease-in-out;
+        }
+
+        @keyframes pulseSparkle {
+            0%, 100% { opacity: 0.3; transform: scale(0.9); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b132b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0072ff;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00c6ff;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+    <!-- Animación de fondo de burbujas en movimiento -->
+    <div class="bubbles" id="bubbleContainer"></div>
+
+    <!-- NAVEGACIÓN / HEADER -->
+    <header class="sticky top-0 z-50 glass-card border-b border-cyan-500/20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- BRANDING / LOGO basándonos en la mantarraya radiante -->
+                <a href="#" class="flex items-center gap-3 group">
+                    <div class="relative w-14 h-14 rounded-full p-[2px] bg-gradient-to-r from-pink-500 via-cyan-400 to-amber-400 shadow-lg shadow-cyan-500/30 group-hover:scale-105 transition-transform duration-300">
+                        <div class="w-full h-full bg-slate-950 rounded-full flex items-center justify-center relative overflow-hidden">
+                            <!-- SVG estilizado de Mantarraya sonriente en el agua -->
+                            <svg class="w-10 h-10 text-cyan-400 transform group-hover:rotate-6 transition-transform" viewBox="0 0 100 100" fill="currentColor">
+                                <path d="M50 15 C30 15 10 30 5 50 C20 48 35 55 45 65 C48 68 50 85 50 95 C50 85 52 68 55 65 C65 55 80 48 95 50 C90 30 70 15 50 15 Z" fill="url(#stingrayGrad)" />
+                                <circle cx="38" cy="38" r="4" fill="#ffffff" />
+                                <circle cx="62" cy="38" r="4" fill="#ffffff" />
+                                <circle cx="39" cy="39" r="2" fill="#000" />
+                                <circle cx="63" cy="39" r="2" fill="#000" />
+                                <path d="M 42 48 Q 50 54 58 48" stroke="#ffffff" stroke-width="2" fill="none" stroke-linecap="round" />
+                                <defs>
+                                    <linearGradient id="stingrayGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#00c6ff" />
+                                        <stop offset="100%" stop-color="#0072ff" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <!-- Destellos dorados alrededor -->
+                            <i class="fa-solid fa-sparkles text-amber-300 text-xs absolute top-1 right-2 sparkle"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-2xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-blue-400 to-amber-300">
+                            Cleany Clean
+                        </span>
+                        <p class="text-[10px] text-cyan-200 uppercase tracking-widest font-semibold flex items-center gap-1">
+                            <i class="fa-solid fa-droplet text-cyan-400"></i> Brillo & Pureza
+                        </p>
+                    </div>
+                </a>
+
+                <!-- Menú de Navegación -->
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="#inicio" class="text-slate-200 hover:text-cyan-400 font-medium transition-colors">Inicio</a>
+                    <a href="#productos" class="text-slate-200 hover:text-cyan-400 font-medium transition-colors">Productos y Servicios</a>
+                    <a href="#nosotros" class="text-slate-200 hover:text-cyan-400 font-medium transition-colors">Nosotros</a>
+                    <a href="#contacto" class="text-slate-200 hover:text-cyan-400 font-medium transition-colors">Contacto</a>
+                </nav>
+
+                <!-- Carrito & Acción rápida -->
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleCartModal()" class="relative p-3 rounded-full glass-card hover:bg-cyan-500/20 text-cyan-300 transition-all">
+                        <i class="fa-solid fa-cart-shopping text-xl"></i>
+                        <span id="cartCount" class="absolute -top-1 -right-1 bg-amber-400 text-slate-950 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
+                    </button>
+                    <a href="#productos" class="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-sm shadow-lg shadow-cyan-500/30 transition-all hover:scale-105">
+                        <i class="fa-solid fa-bolt text-amber-300"></i> Comprar Ahora
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section id="inicio" class="relative pt-12 pb-20 md:pt-20 md:pb-32 overflow-hidden z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                
+                <!-- Texto Principal -->
+                <div class="space-y-6 text-center lg:text-left">
+                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card rainbow-border text-cyan-300 text-xs sm:text-sm font-semibold">
+                        <i class="fa-solid fa-sun text-amber-400 text-base sparkle"></i>
+                        <span>¡Tu espacio resplandeciente con la energía Cleany Clean!</span>
+                    </div>
+
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
+                        Limpieza Profunda, <br>
+                        <span class="bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-blue-400 to-amber-300">
+                            Brillo Impecable
+                        </span>
+                    </h1>
+
+                    <p class="text-slate-300 text-base sm:text-lg max-w-xl mx-auto lg:mx-0 font-light">
+                        Ofrecemos insumos ecológicos de alto rendimiento y servicios profesionales de desinfección integral para hogares, oficinas y comercios.
+                    </p>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
+                        <a href="#productos" class="w-full sm:w-auto px-8 py-4 rounded-full bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-500 text-white font-bold text-lg shadow-xl shadow-cyan-500/30 hover:scale-105 transition-all flex items-center justify-center gap-3">
+                            <i class="fa-solid fa-spray-can-sparkles"></i> Ver Catálogo y Contratar
+                        </a>
+                        <a href="#checkout" class="w-full sm:w-auto px-8 py-4 rounded-full glass-card hover:bg-slate-800/80 text-cyan-300 font-semibold text-lg transition-all flex items-center justify-center gap-2 border border-cyan-500/30">
+                            <i class="fa-solid fa-file-invoice-dollar"></i> Ir a Pagar
+                        </a>
+                    </div>
+
+                    <!-- Métricas / Garantía -->
+                    <div class="grid grid-cols-3 gap-4 pt-8 border-t border-slate-800 text-center">
+                        <div>
+                            <span class="block text-2xl font-bold text-cyan-300">100%</span>
+                            <span class="text-xs text-slate-400">Biodegradable</span>
+                        </div>
+                        <div>
+                            <span class="block text-2xl font-bold text-amber-400">+5000</span>
+                            <span class="text-xs text-slate-400">Clientes Felices</span>
+                        </div>
+                        <div>
+                            <span class="block text-2xl font-bold text-cyan-300">24/7</span>
+                            <span class="text-xs text-slate-400">Atención Garantizada</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ilustración Mascot Mantarraya & Burbujas Dinámicas -->
+                <div class="relative flex justify-center">
+                    <div class="relative w-72 h-72 sm:w-96 sm:h-96 rounded-full glass-card rainbow-border p-6 flex items-center justify-center shadow-2xl shadow-cyan-500/20">
+                        <div class="w-full h-full rounded-full bg-gradient-to-br from-cyan-600/30 to-blue-900/60 flex flex-col items-center justify-center relative overflow-hidden group">
+                            
+                            <!-- Mantarraya SVG Grande animada -->
+                            <svg class="w-52 h-52 text-cyan-300 drop-shadow-[0_0_25px_rgba(0,198,255,0.8)] transform group-hover:scale-110 transition-transform duration-500" viewBox="0 0 100 100" fill="currentColor">
+                                <path d="M50 15 C30 15 10 30 5 50 C20 48 35 55 45 65 C48 68 50 85 50 95 C50 85 52 68 55 65 C65 55 80 48 95 50 C90 30 70 15 50 15 Z" fill="url(#stingrayGradHero)" />
+                                <!-- Ojos amigables -->
+                                <circle cx="38" cy="38" r="4" fill="#ffffff" />
+                                <circle cx="62" cy="38" r="4" fill="#ffffff" />
+                                <circle cx="39" cy="39" r="2.5" fill="#0f172a" />
+                                <circle cx="63" cy="39" r="2.5" fill="#0f172a" />
+                                <!-- Sonrisa -->
+                                <path d="M 40 47 Q 50 55 60 47" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" />
+                                <!-- Agua / Alas con destellos -->
+                                <path d="M 15 45 C 25 35 35 40 40 45" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none" />
+                                <path d="M 85 45 C 75 35 65 40 60 45" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" fill="none" />
+                                <defs>
+                                    <linearGradient id="stingrayGradHero" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#38bdf8" />
+                                        <stop offset="50%" stop-color="#0072ff" />
+                                        <stop offset="100%" stop-color="#0284c7" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+
+                            <!-- Sol radiante en esquina superior -->
+                            <div class="absolute top-6 right-6 text-amber-400 text-3xl sparkle">
+                                <i class="fa-solid fa-sun"></i>
+                            </div>
+
+                            <!-- Gotas de agua decorativas -->
+                            <i class="fa-solid fa-droplet text-cyan-300 text-xl absolute bottom-8 left-8 animate-bounce"></i>
+                            <i class="fa-solid fa-sparkles text-amber-300 text-lg absolute top-10 left-10 sparkle"></i>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- CATÁLOGO DE PRODUCTOS Y SERVICIOS -->
+    <section id="productos" class="py-16 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div class="text-center max-w-3xl mx-auto mb-12">
+                <span class="text-amber-400 font-semibold tracking-wider uppercase text-sm">Tienda & Servicios Cleany</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold mt-2 text-white">
+                    Productos de Limpieza y Contrataciones
+                </h2>
+                <p class="text-slate-300 mt-3">
+                    Selecciona tus artículos o agenda el servicio de desinfección a domicilio. Añádelos al carrito para proceder con tu compra.
+                </p>
+            </div>
+
+            <!-- Filtros Rápidos -->
+            <div class="flex justify-center gap-3 mb-10 flex-wrap">
+                <button onclick="filterCategory('todos')" class="cat-btn px-5 py-2 rounded-full glass-card text-cyan-300 hover:bg-cyan-500/20 active-cat font-medium text-sm transition-all border border-cyan-500/30">Todos</button>
+                <button onclick="filterCategory('productos')" class="cat-btn px-5 py-2 rounded-full glass-card text-slate-300 hover:bg-cyan-500/20 font-medium text-sm transition-all border border-slate-700">Productos</button>
+                <button onclick="filterCategory('servicios')" class="cat-btn px-5 py-2 rounded-full glass-card text-slate-300 hover:bg-cyan-500/20 font-medium text-sm transition-all border border-slate-700">Servicios por Hora</button>
+            </div>
+
+            <!-- Grid de Productos -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="productsGrid">
+                <!-- Se poblará dinámicamente desde JS -->
+            </div>
+
+        </div>
+    </section>
+
+    <!-- CARRO & FORMULARIO COMPLETO DE COMPRA (CHECKOUT) -->
+    <section id="checkout" class="py-16 glass-card my-12 border-y border-cyan-500/20 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <div class="text-center max-w-2xl mx-auto mb-10">
+                <span class="text-cyan-400 font-semibold tracking-wider uppercase text-sm"><i class="fa-solid fa-cash-register"></i> Finalizar Pedido</span>
+                <h2 class="text-3xl font-extrabold text-white mt-1">Datos de Facturación y Envío</h2>
+                <p class="text-slate-300 text-sm mt-2">Por favor, completa tus datos personales, identificación fiscal y elige la forma de pago para procesar la orden.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Columna Izquierda: Formulario de Datos (DNI, CUIL/CUIT, Dirección, etc.) -->
+                <div class="lg:col-span-7 bg-slate-900/80 p-6 sm:p-8 rounded-2xl border border-slate-800 shadow-xl">
+                    <form id="checkoutForm" onsubmit="handleFormSubmit(event)" class="space-y-6">
+                        
+                        <!-- Sección 1: Datos Personales -->
+                        <div>
+                            <h3 class="text-lg font-bold text-cyan-300 border-b border-slate-800 pb-2 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-user text-amber-400"></i> 1. Datos Personales
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Nombre y Apellido *</label>
+                                    <input type="text" id="nombre" required placeholder="Ej. Juan Pérez" 
+                                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Correo Electrónico *</label>
+                                    <input type="email" id="email" required placeholder="juan.perez@email.com" 
+                                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Teléfono / WhatsApp *</label>
+                                    <input type="tel" id="telefono" required placeholder="+54 11 1234-5678" 
+                                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección 2: Identificación Fiscal / Personal -->
+                        <div>
+                            <h3 class="text-lg font-bold text-cyan-300 border-b border-slate-800 pb-2 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-id-card text-amber-400"></i> 2. Identificación Fiscal / Registro
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">DNI (Documento de Identidad) *</label>
+                                    <input type="text" id="dni" required placeholder="Ej. 38.456.789" 
+                                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">CUIL / CUIT *</label>
+                                    <input type="text" id="cuit" required placeholder="20-38456789-8" 
+                                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Condición Frente al IVA *</label>
+                                    <select id="iva" required class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                        <option value="Consumidor Final">Consumidor Final</option>
+                                        <option value="Responsable Inscripto">Responsable Inscripto</option>
+                                        <option value="Monotributo">Monotributista</option>
+                                        <option value="Exento">Exento</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección 3: Dirección de Envío o Servicio -->
+                        <div>
+                            <h3 class="text-lg font-bold text-cyan-300 border-b border-slate-800 pb-2 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-location-dot text-amber-400"></i> 3. Dirección de Entrega / Servicio
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div class="sm:col-span-2">
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Calle y Número *</label>
+                                    <input type="text" id="direccion" required placeholder="Av. Corrientes 1234" 
+                                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Piso / Depto / Timbre</label>
+                                    <input type="text" id="piso" placeholder="4B" 
+                                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Ciudad / Localidad *</label>
+                                    <input type="text" id="ciudad" required placeholder="Buenos Aires" 
+                                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Provincia / Estado *</label>
+                                    <input type="text" id="provincia" required placeholder="CABA / Buenos Aires" 
+                                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-300 mb-1">Código Postal *</label>
+                                    <input type="text" id="cp" required placeholder="C1043" 
+                                           class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-400 transition-colors">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección 4: Forma de Pago -->
+                        <div>
+                            <h3 class="text-lg font-bold text-cyan-300 border-b border-slate-800 pb-2 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-credit-card text-amber-400"></i> 4. Forma de Pago
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label class="flex items-center gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-400 transition-colors">
+                                    <input type="radio" name="formaPago" value="Tarjeta de Crédito/Débito" checked class="text-cyan-400 focus:ring-0">
+                                    <div class="text-sm">
+                                        <span class="block font-semibold text-white">Tarjeta Crédito / Débito</span>
+                                        <span class="text-xs text-slate-400">Visa, Mastercard, Amex</span>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-400 transition-colors">
+                                    <input type="radio" name="formaPago" value="Mercado Pago" class="text-cyan-400 focus:ring-0">
+                                    <div class="text-sm">
+                                        <span class="block font-semibold text-white">Mercado Pago / QRs</span>
+                                        <span class="text-xs text-slate-400">Acreditación instantánea</span>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-400 transition-colors">
+                                    <input type="radio" name="formaPago" value="Transferencia Bancaria" class="text-cyan-400 focus:ring-0">
+                                    <div class="text-sm">
+                                        <span class="block font-semibold text-white">Transferencia / CBU</span>
+                                        <span class="text-xs text-slate-400">10% de descuento</span>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center gap-3 p-3 bg-slate-800/60 rounded-xl border border-slate-700 cursor-pointer hover:border-cyan-400 transition-colors">
+                                    <input type="radio" name="formaPago" value="Efectivo Contra Entrega" class="text-cyan-400 focus:ring-0">
+                                    <div class="text-sm">
+                                        <span class="block font-semibold text-white">Efectivo contra entrega</span>
+                                        <span class="text-xs text-slate-400">Pagas al recibir o al finalizar</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Botón Submit -->
+                        <button type="submit" class="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-amber-400 text-white font-extrabold text-lg shadow-lg shadow-cyan-500/30 hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-lock text-slate-900"></i> Confirmar y Finalizar Compra
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Columna Derecha: Resumen del Carrito de Compras -->
+                <div class="lg:col-span-5 bg-slate-900/90 p-6 sm:p-8 rounded-2xl border border-cyan-500/30 shadow-xl flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xl font-extrabold text-white mb-6 flex items-center justify-between border-b border-slate-800 pb-3">
+                            <span><i class="fa-solid fa-bag-shopping text-cyan-400 mr-2"></i> Resumen de Compra</span>
+                            <span id="summaryCount" class="text-sm font-normal text-slate-400">0 ítems</span>
+                        </h3>
+
+                        <!-- Lista de ítems en el checkout -->
+                        <div id="checkoutCartItems" class="space-y-4 max-h-80 overflow-y-auto pr-2 mb-6">
+                            <p class="text-slate-400 text-sm text-center py-8">Tu carrito está vacío. Agrega productos o servicios para continuar.</p>
+                        </div>
+                    </div>
+
+                    <!-- Totales -->
+                    <div class="border-t border-slate-800 pt-4 space-y-3">
+                        <div class="flex justify-between text-sm text-slate-300">
+                            <span>Subtotal</span>
+                            <span id="subtotalPrice">$0.00</span>
+                        </div>
+                        <div class="flex justify-between text-sm text-slate-300">
+                            <span>Envío / Desplazamiento</span>
+                            <span class="text-emerald-400 font-semibold">¡GRATIS!</span>
+                        </div>
+                        <div class="flex justify-between text-lg font-bold text-white border-t border-slate-800 pt-3">
+                            <span>Total a Pagar</span>
+                            <span id="totalPrice" class="text-cyan-300 text-xl font-extrabold">$0.00</span>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <!-- SOBRE NOSOTROS & VENTAJAS -->
+    <section id="nosotros" class="py-16 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <div class="glass-card p-6 rounded-2xl text-center glass-card-hover">
+                    <div class="w-16 h-16 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center mx-auto mb-4 text-2xl">
+                        <i class="fa-solid fa-leaf"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">100% Ecológicos</h3>
+                    <p class="text-slate-300 text-sm">Fórmulas biodegradables inocuas para mascotas y niños con el máximo poder desinfectante.</p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl text-center glass-card-hover">
+                    <div class="w-16 h-16 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Personal Verificado</h3>
+                    <p class="text-slate-300 text-sm">Equipo técnico altamente capacitado, uniformado y asegurado para tu total tranquilidad.</p>
+                </div>
+
+                <div class="glass-card p-6 rounded-2xl text-center glass-card-hover">
+                    <div class="w-16 h-16 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2">Garantía Cleany Clean</h3>
+                    <p class="text-slate-300 text-sm">Si no quedas satisfecho con el resultado de la limpieza, re-ejecutamos el servicio sin costo adicional.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer id="contacto" class="glass-card border-t border-slate-800 py-12 relative z-10 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                
+                <!-- Col 1 -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-droplet text-cyan-400 text-2xl"></i>
+                        <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 to-amber-300">Cleany Clean</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Soluciones integrales de limpieza, desinfección y productos de máxima calidad acuática.</p>
+                </div>
+
+                <!-- Col 2 -->
+                <div>
+                    <h4 class="text-sm font-bold text-white uppercase tracking-wider mb-3">Navegación</h4>
+                    <ul class="space-y-2 text-xs text-slate-300">
+                        <li><a href="#inicio" class="hover:text-cyan-400">Inicio</a></li>
+                        <li><a href="#productos" class="hover:text-cyan-400">Catálogo de Productos</a></li>
+                        <li><a href="#checkout" class="hover:text-cyan-400">Formulario de Compra</a></li>
+                        <li><a href="#nosotros" class="hover:text-cyan-400">Nosotros</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 3 -->
+                <div>
+                    <h4 class="text-sm font-bold text-white uppercase tracking-wider mb-3">Contacto Directo</h4>
+                    <ul class="space-y-2 text-xs text-slate-300">
+                        <li><i class="fa-solid fa-phone text-cyan-400 mr-2"></i> +54 11 4000-CLEAN</li>
+                        <li><i class="fa-solid fa-envelope text-cyan-400 mr-2"></i> ventas@cleanyclean.com</li>
+                        <li><i class="fa-solid fa-location-dot text-cyan-400 mr-2"></i> Av. Central 456, Buenos Aires</li>
+                    </ul>
+                </div>
+
+                <!-- Col 4 -->
+                <div>
+                    <h4 class="text-sm font-bold text-white uppercase tracking-wider mb-3">Redes Sociales</h4>
+                    <div class="flex gap-3 text-lg">
+                        <a href="#" class="w-9 h-9 rounded-full bg-slate-800 text-cyan-400 flex items-center justify-center hover:bg-cyan-500 hover:text-slate-950 transition-colors"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-slate-800 text-cyan-400 flex items-center justify-center hover:bg-cyan-500 hover:text-slate-950 transition-colors"><i class="fa-brands fa-facebook-f"></i></a>
+                        <a href="#" class="w-9 h-9 rounded-full bg-slate-800 text-cyan-400 flex items-center justify-center hover:bg-cyan-500 hover:text-slate-950 transition-colors"><i class="fa-brands fa-whatsapp"></i></a>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="border-t border-slate-800 pt-6 text-center text-xs text-slate-500">
+                
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL DE CONFIRMACIÓN DE COMPRA / TICKET -->
+    <div id="confirmationModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-cyan-500/40 rounded-2xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative overflow-hidden text-center">
+            
+            <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+
+            <h3 class="text-2xl font-extrabold text-white mb-2">¡Pedido Confirmado!</h3>
+            <p class="text-slate-300 text-sm mb-6">Gracias por confiar en <span class="text-cyan-300 font-bold">Cleany Clean</span>. Hemos enviado el comprobante a tu correo.</p>
+
+            <!-- Resumen Ticket -->
+            <div id="ticketDetails" class="bg-slate-950/80 rounded-xl p-4 text-left text-xs space-y-2 mb-6 border border-slate-800 text-slate-300">
+                <!-- Se rellena con JS -->
+            </div>
+
+            <button onclick="closeModal()" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold hover:scale-105 transition-transform">
+                Aceptar y Volver al Inicio
+            </button>
+        </div>
+    </div>
+
+
+</body>
+</html>
