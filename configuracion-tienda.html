@@ -88,7 +88,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="orders-config.js"></script>
-  <script src="orders-store.js"></script>
+  <script src="orders-store.js?v=20261028-settings-fix-1"></script>
   <script>
     const LOCAL_PASSWORD = 'santi123';
     const DEFAULT_SETTINGS = {
@@ -108,6 +108,37 @@
     let refreshTimer = null;
     const isCloud = () => Boolean(window.CleanyOrders && window.CleanyOrders.isCloudConfigured());
     const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+    function readLocalSettingsFallback() {
+      try {
+        const raw = window.localStorage.getItem('cleanyCleanSiteSettings');
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        console.warn('No se pudo leer la configuración local:', error);
+        return null;
+      }
+    }
+
+    async function loadSettingsCompat() {
+      if (window.CleanyOrders && typeof window.CleanyOrders.getSiteSettings === 'function') {
+        return await window.CleanyOrders.getSiteSettings();
+      }
+      if (isCloud()) {
+        throw new Error('El módulo de configuración está desactualizado. Recargá esta página con Ctrl+F5; si persiste, revisá que orders-store.js esté publicado en main.');
+      }
+      return readLocalSettingsFallback();
+    }
+
+    async function saveSettingsCompat(nextSettings) {
+      if (window.CleanyOrders && typeof window.CleanyOrders.saveSiteSettings === 'function') {
+        return await window.CleanyOrders.saveSiteSettings(nextSettings);
+      }
+      if (isCloud()) {
+        throw new Error('El módulo central está desactualizado; no se guardó nada. Recargá con Ctrl+F5 y probá otra vez.');
+      }
+      window.localStorage.setItem('cleanyCleanSiteSettings', JSON.stringify(nextSettings));
+      return { local: true, cloud: false };
+    }
 
     function normalizeSettings(value) {
       const source = value && typeof value === 'object' ? value : {};
@@ -272,7 +303,7 @@
         } else if ($('password').value !== LOCAL_PASSWORD) {
           throw new Error('La contraseña local no es correcta.');
         }
-        const saved = await window.CleanyOrders.getSiteSettings();
+        const saved = await loadSettingsCompat();
         settings = normalizeSettings(saved || DEFAULT_SETTINGS);
         $('loginPanel').classList.add('hidden');
         $('settingsPanel').classList.remove('hidden');
@@ -303,7 +334,7 @@
       button.textContent = 'Guardando...';
       try {
         const next = collectSettings();
-        const result = await window.CleanyOrders.saveSiteSettings(next);
+        const result = await saveSettingsCompat(next);
         settings = normalizeSettings(next);
         populateForm();
         setStatus(result.cloud
