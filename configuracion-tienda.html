@@ -153,6 +153,28 @@
       return '<label class="block"><span class="field-label">' + label + '</span><input class="field" data-field="' + field + '" type="' + type + '" value="' + esc(value) + '" ' + (extra || '') + '></label>';
     }
 
+    function snapshotProductInputs() {
+      const rows = Array.from($('productsEditor').querySelectorAll('[data-product-id]'));
+      if (!rows.length) return;
+      settings.products = rows.map(row => {
+        const previous = settings.products.find(item => Number(item.id) === Number(row.dataset.productId)) || {};
+        const value = field => row.querySelector('[data-field="' + field + '"]').value;
+        const rawPrice = value('price').trim();
+        const rawStock = value('stock').trim();
+        return {
+          id: Number(row.dataset.productId),
+          name: value('name'),
+          category: value('category') === 'servicios' ? 'servicios' : 'productos',
+          price: rawPrice === '' ? '' : Number(rawPrice),
+          stock: rawStock === '' ? null : Number(rawStock),
+          description: value('description'),
+          icon: previous.icon || 'fa-box-open',
+          badge: previous.badge || 'Nuevo',
+          rating: previous.rating || 'Nuevo'
+        };
+      });
+    }
+
     function renderProducts() {
       const container = $('productsEditor');
       container.innerHTML = '';
@@ -170,6 +192,7 @@
             '<label class="block sm:col-span-2 lg:col-span-4"><span class="field-label">Descripción</span><textarea class="field" data-field="description" rows="2" maxlength="400">' + esc(product.description) + '</textarea></label>' +
           '</div>';
         row.querySelector('[data-remove]').addEventListener('click', () => {
+          snapshotProductInputs();
           settings.products = settings.products.filter(item => Number(item.id) !== Number(product.id));
           renderProducts();
           setStatus('Artículo quitado del borrador. Guardá para aplicar el cambio.', false);
@@ -265,6 +288,7 @@
     });
 
     $('addProduct').addEventListener('click', () => {
+      snapshotProductInputs();
       const nextId = Math.max(0, ...settings.products.map(p => Number(p.id) || 0)) + 1;
       settings.products.push({ id: nextId, name: 'Nuevo producto', category: 'productos', price: 0, stock: null, description: '', icon: 'fa-box-open', badge: 'Nuevo', rating: 'Nuevo' });
       renderProducts();
