@@ -34,19 +34,21 @@
     <section id="loginPanel" class="glass mx-auto max-w-md rounded-3xl p-7 sm:p-9 shadow-2xl">
       <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-400/10 text-3xl text-cyan-300"><i class="fa-solid fa-lock"></i></div>
       <h2 class="text-center text-2xl font-extrabold">Acceso al gestor</h2>
-      <p class="mt-2 mb-7 text-center text-sm text-slate-300">Ingresá la contraseña para continuar.</p>
+      <p id="loginSubtitle" class="mt-2 mb-7 text-center text-sm text-slate-300">Ingresá la contraseña para continuar.</p>
       <form id="loginForm" class="space-y-4">
+        <div id="adminEmailField" class="hidden"><label for="adminEmail" class="mb-1 block text-sm font-semibold">Email de administrador</label><input id="adminEmail" type="email" autocomplete="username" class="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-cyan-400" placeholder="admin@tudominio.com"></div>
         <label for="password" class="block text-sm font-semibold">Contraseña</label>
         <input id="password" type="password" autocomplete="current-password" required class="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-cyan-400" placeholder="Ingresá la contraseña">
         <p id="loginError" class="hidden text-sm text-rose-300" role="alert">La contraseña no es correcta. Intentá de nuevo.</p>
         <button class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 font-bold text-white hover:brightness-110" type="submit">Entrar <i class="fa-solid fa-arrow-right ml-2"></i></button>
       </form>
-      <p class="mt-5 text-xs text-amber-200/80">Aviso: este acceso es una barrera visual del prototipo, no una autenticación segura.</p>
+      <p id="loginModeNotice" class="mt-5 text-xs text-amber-200/80">Modo local: no sincroniza compras entre navegadores.</p>
     </section>
 
     <section id="dashboard" class="hidden space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3"><p id="storageModeNotice" class="text-sm text-cyan-200" role="status">Modo de almacenamiento pendiente.</p><button id="logoutButton" type="button" class="rounded-lg border border-slate-600 px-3 py-2 text-sm hover:bg-slate-800">Cerrar sesión</button></div>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div class="glass rounded-2xl p-5"><p class="text-sm text-slate-300">Pedidos guardados en este navegador</p><p id="ordersCount" class="mt-2 text-3xl font-extrabold text-cyan-300">0</p></div>
+        <div class="glass rounded-2xl p-5"><p class="text-sm text-slate-300">Pedidos disponibles</p><p id="ordersCount" class="mt-2 text-3xl font-extrabold text-cyan-300">0</p></div>
         <div class="glass rounded-2xl p-5"><p class="text-sm text-slate-300">Total acumulado</p><p id="ordersTotal" class="mt-2 text-3xl font-extrabold text-white">$ 0</p></div>
         <div class="glass rounded-2xl p-5 flex flex-col justify-between gap-3"><p class="text-sm text-slate-300">Facturación</p><p class="text-sm">Elegí una compra y generá una vista previa A o B para imprimir.</p></div>
       </div>
@@ -67,7 +69,7 @@
           </table>
         </div>
       </div>
-      <p class="text-xs leading-relaxed text-slate-400">Importante: esta versión guarda los pedidos en el almacenamiento local del navegador donde se hizo la compra. No sincroniza pedidos entre dispositivos o clientes. Para recibir compras de todos los visitantes hace falta conectar una base de datos y un servidor. Las facturas de abajo son vistas previas no fiscales; no reemplazan comprobantes autorizados por ARCA ni asignan CAE.</p>
+      <p id="storageNotice" class="text-xs leading-relaxed text-slate-400">Sin una conexión central configurada, los pedidos quedan solo en el navegador actual. Las vistas previas A/B no son comprobantes fiscales autorizados ni asignan CAE.</p>
     </section>
 
     <section id="invoicePreview" class="hidden mx-auto mt-8 max-w-4xl rounded-2xl bg-white p-4 sm:p-8 shadow-2xl">
@@ -85,42 +87,111 @@
     </section>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="orders-config.js"></script>
+  <script src="orders-store.js"></script>
   <script>
     const ACCESS_PASSWORD = "santi123";
-    const ORDERS_KEY = "cleanyCleanOrders";
     let selectedOrder = null;
+    let allOrders = [];
+    let refreshTimer = null;
     const $ = id => document.getElementById(id);
     const money = value => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}).format(Number(value)||0);
     const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
     const formatDate = value => { const d = new Date(value); return Number.isNaN(d.getTime()) ? 'Fecha no disponible' : d.toLocaleString('es-AR'); };
-    function readOrders() { try { const data = JSON.parse(localStorage.getItem(ORDERS_KEY)||'[]'); return Array.isArray(data) ? data : []; } catch(e) { return []; } }
+    const cloudMode = () => Boolean(window.CleanyOrders && window.CleanyOrders.isCloudConfigured());
 
-    $('loginForm').addEventListener('submit', event => {
+    function configureLoginMode() {
+      const cloud = cloudMode();
+      $('adminEmailField').classList.toggle('hidden', !cloud);
+      $('adminEmail').required = cloud;
+      $('loginSubtitle').textContent = cloud
+        ? 'Ingresá con el email y la contraseña del administrador de Supabase.'
+        : 'Ingresá la contraseña local para consultar los pedidos de este navegador.';
+      $('loginModeNotice').textContent = cloud
+        ? 'Conexión central configurada. Solo las cuentas autorizadas de administrador pueden leer pedidos.'
+        : 'Modo local: el acceso por contraseña es solo una barrera visual y no sincroniza pedidos entre dispositivos. Configurá Supabase para producción.';
+    }
+    configureLoginMode();
+
+    $('loginForm').addEventListener('submit', async event => {
       event.preventDefault();
-      if ($('password').value === ACCESS_PASSWORD) {
-        $('loginError').classList.add('hidden');
+      $('loginError').classList.add('hidden');
+      try {
+        if (cloudMode()) {
+          await window.CleanyOrders.signInAdmin($('adminEmail').value, $('password').value);
+        } else if ($('password').value !== ACCESS_PASSWORD) {
+          throw new Error('La contraseña local no es correcta.');
+        }
+
         $('loginPanel').classList.add('hidden');
         $('dashboard').classList.remove('hidden');
-        renderOrders();
-      } else {
+        $('storageModeNotice').textContent = cloudMode()
+          ? 'Conectado a la base central: se muestran pedidos de todos los visitantes.'
+          : 'Modo local: solo se muestran los pedidos guardados en este navegador.';
+        $('storageNotice').textContent = cloudMode()
+          ? 'Los pedidos centralizados se consultan en Supabase y están protegidos por permisos de administrador. Las facturas A/B son vistas previas no fiscales.'
+          : 'Sin base central, los pedidos solo existen en este navegador y no se comparten entre dispositivos. Las facturas A/B son vistas previas no fiscales.';
+        await renderOrders();
+        if (cloudMode()) {
+          await window.CleanyOrders.syncPendingOrders();
+          await renderOrders();
+          if (!refreshTimer) refreshTimer = window.setInterval(() => renderOrders().catch(error => console.error('No se pudo actualizar el gestor:', error)), 15000);
+        }
+      } catch (error) {
+        $('loginError').textContent = error.message || 'No se pudo iniciar sesión.';
         $('loginError').classList.remove('hidden');
-        $('password').focus(); $('password').select();
+        $('password').focus();
       }
     });
-    $('refreshOrders').addEventListener('click', renderOrders);
-    $('searchOrders').addEventListener('input', renderOrders);
+
+    $('refreshOrders').addEventListener('click', async () => {
+      try {
+        if (cloudMode()) await window.CleanyOrders.syncPendingOrders();
+        await renderOrders();
+      } catch (error) {
+        console.error('No se pudieron actualizar los pedidos:', error);
+      }
+    });
+    $('searchOrders').addEventListener('input', () => renderOrders().catch(console.error));
     $('invoiceType').addEventListener('change', renderInvoice);
     $('printInvoice').addEventListener('click', () => { if (selectedOrder) window.print(); });
     $('closeInvoice').addEventListener('click', () => $('invoicePreview').classList.add('hidden'));
+    $('logoutButton').addEventListener('click', async () => {
+      try { if (cloudMode()) await window.CleanyOrders.signOutAdmin(); } catch (error) { console.error(error); }
+      if (refreshTimer) { window.clearInterval(refreshTimer); refreshTimer = null; }
+      $('dashboard').classList.add('hidden');
+      $('invoicePreview').classList.add('hidden');
+      $('loginPanel').classList.remove('hidden');
+      $('password').value = '';
+      $('adminEmail').value = '';
+    });
+    window.addEventListener('storage', event => {
+      if (event.key === 'cleanyCleanOrders' && !$('dashboard').classList.contains('hidden')) renderOrders().catch(console.error);
+    });
 
-    function renderOrders() {
-      const orders = readOrders();
+    async function renderOrders() {
+      let orders = [];
+      try {
+        orders = await window.CleanyOrders.getAdminOrders();
+      } catch (error) {
+        $('ordersCount').textContent = '—';
+        $('ordersTotal').textContent = '—';
+        $('ordersRows').innerHTML = '';
+        $('ordersTableWrap').classList.add('hidden');
+        $('ordersEmpty').classList.remove('hidden');
+        $('ordersEmpty').textContent = 'No se pudieron cargar los pedidos. Revisá la sesión, la configuración de Supabase y las políticas de acceso.';
+        console.error('Error al consultar pedidos:', error);
+        return;
+      }
+
+      allOrders = orders;
       const query = $('searchOrders').value.trim().toLocaleLowerCase('es-AR');
       const filtered = orders.filter(o => [o.id,o.customer?.nombre,o.customer?.email,o.customer?.cuit].some(v => String(v||'').toLocaleLowerCase('es-AR').includes(query)));
       $('ordersCount').textContent = orders.length;
       $('ordersTotal').textContent = money(orders.reduce((sum,o)=>sum+(Number(o.total)||0),0));
       $('ordersEmpty').classList.toggle('hidden', filtered.length > 0);
-      $('ordersEmpty').textContent = orders.length ? 'No hay pedidos que coincidan con la búsqueda.' : 'Todavía no hay compras guardadas en este navegador.';
+      $('ordersEmpty').textContent = orders.length ? 'No hay pedidos que coincidan con la búsqueda.' : 'Todavía no hay compras registradas.';
       $('ordersTableWrap').classList.toggle('hidden', filtered.length === 0);
       $('ordersRows').innerHTML = filtered.map(o => {
         const customer = o.customer || {};
@@ -129,7 +200,7 @@
         return '<tr class="border-t border-slate-800 align-top"><td class="p-3"><strong>'+esc(o.id)+'</strong><br><span class="text-xs text-slate-400">'+esc(formatDate(o.createdAt))+'</span></td><td class="p-3">'+esc(customer.nombre)+'<br><span class="text-xs text-slate-400">DNI: '+esc(customer.dni)+' · CUIT: '+esc(customer.cuit)+'</span></td><td class="p-3">'+esc(customer.email)+'<br>'+esc(customer.telefono)+'</td><td class="p-3">'+count+' ítem(s)<br><span class="text-xs text-slate-400">'+esc(items.map(i=>i.name+' × '+i.quantity).join(', '))+'</span></td><td class="p-3 font-bold">'+money(o.total)+'</td><td class="p-3">'+esc(o.formaPago)+'</td><td class="p-3"><div class="flex gap-1"><button data-invoice="A" data-order="'+esc(o.id)+'" class="rounded bg-cyan-700 px-2 py-1 text-xs font-bold text-white">A</button><button data-invoice="B" data-order="'+esc(o.id)+'" class="rounded bg-blue-700 px-2 py-1 text-xs font-bold text-white">B</button></div></td></tr>';
       }).join('');
       $('ordersRows').querySelectorAll('button[data-order]').forEach(button => button.addEventListener('click', () => {
-        selectedOrder = readOrders().find(o => o.id === button.dataset.order) || null;
+        selectedOrder = allOrders.find(o => o.id === button.dataset.order) || null;
         if (!selectedOrder) return;
         $('invoiceType').value = button.dataset.invoice;
         $('invoicePreview').classList.remove('hidden');
