@@ -43,10 +43,12 @@
         <button class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 font-bold text-white hover:brightness-110" type="submit">Entrar <i class="fa-solid fa-arrow-right ml-2"></i></button>
       </form>
       <p id="loginModeNotice" class="mt-5 text-xs text-amber-200/80">Modo local: no sincroniza compras entre navegadores.</p>
+      <p id="localStorageDiagnostic" class="mt-3 rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-xs leading-relaxed text-slate-300" role="status"></p>
     </section>
 
     <section id="dashboard" class="hidden space-y-6">
       <div class="flex flex-wrap items-center justify-between gap-3"><p id="storageModeNotice" class="text-sm text-cyan-200" role="status">Modo de almacenamiento pendiente.</p><button id="logoutButton" type="button" class="rounded-lg border border-slate-600 px-3 py-2 text-sm hover:bg-slate-800">Cerrar sesión</button></div>
+      <p class="text-xs text-slate-400">Origen de esta página: <code id="activeOrigin" class="break-all text-cyan-200"></code></p>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div class="glass rounded-2xl p-5"><p class="text-sm text-slate-300">Pedidos disponibles</p><p id="ordersCount" class="mt-2 text-3xl font-extrabold text-cyan-300">0</p></div>
         <div class="glass rounded-2xl p-5"><p class="text-sm text-slate-300">Total acumulado</p><p id="ordersTotal" class="mt-2 text-3xl font-extrabold text-white">$ 0</p></div>
@@ -103,6 +105,8 @@
 
     function configureLoginMode() {
       const cloud = cloudMode();
+      const originField = $('activeOrigin');
+      if (originField) originField.textContent = window.location.origin;
       $('adminEmailField').classList.toggle('hidden', !cloud);
       $('adminEmail').required = cloud;
       $('loginSubtitle').textContent = cloud
@@ -111,6 +115,13 @@
       $('loginModeNotice').textContent = cloud
         ? 'Conexión central configurada. Solo las cuentas autorizadas de administrador pueden leer pedidos.'
         : 'Modo local: el acceso por contraseña es solo una barrera visual y no sincroniza pedidos entre dispositivos. Configurá Supabase para producción.';
+      const localCount = window.CleanyOrders ? window.CleanyOrders.readLocalOrders().length : 0;
+      $('localStorageDiagnostic').textContent = cloud
+        ? 'Supabase está configurado. Los pedidos centrales se cargan después del inicio de sesión.'
+        : 'Diagnóstico de esta página: origen ' + window.location.origin + '; pedidos guardados en este navegador/origen: ' + localCount + '. ' +
+          (localCount === 0
+            ? 'No hay pedidos locales aquí. Las compras hechas en otra URL, otro navegador o dispositivo no pueden leerse desde este almacenamiento. Para centralizar compras, completá orders-config.js y configurá Supabase.'
+            : 'Estos pedidos locales deberían aparecer al entrar. Si faltan compras, verificá que la tienda se haya abierto desde el mismo origen mostrado arriba. Para sincronización entre dispositivos, configurá Supabase.');
     }
     configureLoginMode();
 
@@ -128,7 +139,7 @@
         $('dashboard').classList.remove('hidden');
         $('storageModeNotice').textContent = cloudMode()
           ? 'Conectado a la base central: se muestran pedidos de todos los visitantes.'
-          : 'Modo local: solo se muestran los pedidos guardados en este navegador.';
+          : 'Modo local: solo se muestran los pedidos guardados en este navegador y este origen (' + window.location.origin + ').';
         $('storageNotice').textContent = cloudMode()
           ? 'Los pedidos centralizados se consultan en Supabase y están protegidos por permisos de administrador. Las facturas A/B son vistas previas no fiscales.'
           : 'Sin base central, los pedidos solo existen en este navegador y no se comparten entre dispositivos. Las facturas A/B son vistas previas no fiscales.';
@@ -136,8 +147,9 @@
         if (cloudMode()) {
           await window.CleanyOrders.syncPendingOrders();
           await renderOrders();
-          if (!refreshTimer) refreshTimer = window.setInterval(() => renderOrders().catch(error => console.error('No se pudo actualizar el gestor:', error)), 15000);
         }
+        // Mantener actualizado el listado tanto en modo local como con base central.
+        if (!refreshTimer) refreshTimer = window.setInterval(() => renderOrders().catch(error => console.error('No se pudo actualizar el gestor:', error)), 10000);
       } catch (error) {
         $('loginError').textContent = error.message || 'No se pudo iniciar sesión.';
         $('loginError').classList.remove('hidden');
@@ -191,7 +203,11 @@
       $('ordersCount').textContent = orders.length;
       $('ordersTotal').textContent = money(orders.reduce((sum,o)=>sum+(Number(o.total)||0),0));
       $('ordersEmpty').classList.toggle('hidden', filtered.length > 0);
-      $('ordersEmpty').textContent = orders.length ? 'No hay pedidos que coincidan con la búsqueda.' : 'Todavía no hay compras registradas.';
+      $('ordersEmpty').textContent = orders.length
+        ? 'No hay pedidos que coincidan con la búsqueda.'
+        : (cloudMode()
+          ? 'La base central no devuelve compras. Comprobá que el checkout esté sincronizando con Supabase y que la tabla public.orders tenga registros.'
+          : 'No hay compras guardadas bajo este origen y navegador. Si las compras se hicieron en otra URL, otro navegador o antes de que estuviera activo el guardado, este almacenamiento no puede verlas. Para sincronizar compras de distintos visitantes, configurá Supabase en orders-config.js.');
       $('ordersTableWrap').classList.toggle('hidden', filtered.length === 0);
       $('ordersRows').innerHTML = filtered.map(o => {
         const customer = o.customer || {};
