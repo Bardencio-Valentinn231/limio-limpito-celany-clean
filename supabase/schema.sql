@@ -48,3 +48,33 @@ create policy "Admins can delete orders"
 -- La clave pública no permite leer pedidos de clientes: SELECT queda limitado
 -- a usuarios autenticados cuyo app_metadata.role sea "admin".
 -- Nunca agregues una service_role key al frontend.
+
+
+-- Configuración pública de tienda: productos, stock visible y colores.
+-- El contenido se puede leer desde la tienda; solo administradores pueden cambiarlo.
+create table if not exists public.site_settings (
+  id text primary key check (id = 'default'),
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.site_settings enable row level security;
+revoke all on table public.site_settings from anon, authenticated;
+grant select on table public.site_settings to anon, authenticated;
+grant insert, update on table public.site_settings to authenticated;
+
+drop policy if exists "Anyone can read public site settings" on public.site_settings;
+create policy "Anyone can read public site settings"
+  on public.site_settings for select to anon, authenticated
+  using (id = 'default');
+
+drop policy if exists "Admins can insert site settings" on public.site_settings;
+create policy "Admins can insert site settings"
+  on public.site_settings for insert to authenticated
+  with check ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+
+drop policy if exists "Admins can update site settings" on public.site_settings;
+create policy "Admins can update site settings"
+  on public.site_settings for update to authenticated
+  using ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin')
+  with check ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');

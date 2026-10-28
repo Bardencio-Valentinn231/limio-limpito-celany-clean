@@ -1,6 +1,6 @@
 
    // Array de Productos y Servicios
-const catalogData = [
+let catalogData = [
     {
         id: 1,
         name: "Detergente Bio-Acuático 5L",
@@ -99,37 +99,81 @@ function renderProducts(items) {
     items.forEach(prod => {
         const card = document.createElement('div');
         card.className = "glass-card rounded-2xl p-5 flex flex-col justify-between glass-card-hover border border-slate-800 relative";
+        const iconClass = /^fa-[a-z0-9-]+$/i.test(String(prod.icon || '')) ? prod.icon : 'fa-box-open';
+        const stockKnown = prod.stock !== null && prod.stock !== undefined && Number.isFinite(Number(prod.stock));
+        const stock = stockKnown ? Math.max(0, Math.floor(Number(prod.stock))) : null;
+        const soldOut = stock === 0;
+        const stockText = stockKnown ? '<p class="mb-3 text-xs ' + (soldOut ? 'text-rose-300' : 'text-slate-400') + '">' + (soldOut ? 'Sin stock disponible' : 'Disponibles: ' + stock) + '</p>' : '';
         card.innerHTML = `
             <div>
                 <div class="flex justify-between items-start mb-3">
-                    <span class="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-semibold">
-                        ${prod.badge}
-                    </span>
-                    <span class="text-amber-400 text-xs font-bold flex items-center gap-1">
-                        <i class="fa-solid fa-star"></i> ${prod.rating}
-                    </span>
+                    <span class="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-semibold">${escapeHtml(prod.badge || 'Producto')}</span>
+                    <span class="text-amber-400 text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-star"></i> ${escapeHtml(prod.rating || '')}</span>
                 </div>
-
                 <div class="w-full h-36 rounded-xl bg-slate-950/60 flex items-center justify-center my-3 text-cyan-400 text-4xl group">
-                    <i class="fa-solid ${prod.icon} transform group-hover:scale-110 transition-transform"></i>
+                    <i class="fa-solid ${iconClass} transform group-hover:scale-110 transition-transform"></i>
                 </div>
-
-                <h3 class="text-lg font-bold text-white mb-1">${prod.name}</h3>
-                <p class="text-slate-400 text-xs mb-4">${prod.description}</p>
+                <h3 class="text-lg font-bold text-white mb-1">${escapeHtml(prod.name)}</h3>
+                <p class="text-slate-400 text-xs mb-4">${escapeHtml(prod.description || '')}</p>
             </div>
-
             <div>
                 <div class="flex justify-between items-center mb-4">
                     <span class="text-xs text-slate-400">Precio</span>
-                    <span class="text-xl font-extrabold text-cyan-300">$${prod.price.toLocaleString()}</span>
+                    <span class="text-xl font-extrabold text-cyan-300">${moneyARS(prod.price)}</span>
                 </div>
-                <button type="button" onclick="addToCart(${prod.id})" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-cyan-300 font-semibold text-sm transition-all flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-cart-plus"></i> Agregar al Carrito
+                ${stockText}
+                <button type="button" onclick="addToCart(${Number(prod.id)})" ${soldOut ? 'disabled' : ''} class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-cyan-300 font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-40">
+                    <i class="fa-solid fa-cart-plus"></i> ${soldOut ? 'Sin stock' : 'Agregar al Carrito'}
                 </button>
-            </div>
-        `;
+            </div>`;
         grid.appendChild(card);
     });
+}
+
+function moneyARS(value) {
+    return '$' + (Number(value) || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+}
+
+function applySiteSettings(settings) {
+    if (!settings || typeof settings !== 'object') return;
+    if (Array.isArray(settings.products)) {
+        const defaults = new Map(catalogData.map(function (product) { return [Number(product.id), product]; }));
+        catalogData = settings.products.map(function (saved, index) {
+            const id = Number(saved.id);
+            const original = defaults.get(id) || {};
+            const category = saved.category === 'servicios' ? 'servicios' : 'productos';
+            const price = Number(saved.price);
+            const stock = saved.stock === null || saved.stock === undefined || saved.stock === ''
+                ? null : Math.max(0, Math.floor(Number(saved.stock) || 0));
+            return {
+                id: Number.isFinite(id) && id > 0 ? id : index + 1,
+                name: String(saved.name || original.name || 'Nuevo producto').slice(0, 120),
+                category: category,
+                price: Number.isFinite(price) && price >= 0 ? price : Number(original.price) || 0,
+                stock: stock,
+                rating: String(saved.rating || original.rating || 'Nuevo').slice(0, 12),
+                icon: /^fa-[a-z0-9-]+$/i.test(String(saved.icon || original.icon || '')) ? String(saved.icon || original.icon) : 'fa-box-open',
+                badge: String(saved.badge || original.badge || 'Nuevo').slice(0, 40),
+                description: String(saved.description || original.description || '').slice(0, 400)
+            };
+        });
+    }
+
+    const colors = settings.colors || {};
+    const validColor = value => /^#[0-9a-f]{6}$/i.test(String(value || ''));
+    const start = validColor(colors.backgroundStart) ? colors.backgroundStart : '#0b132b';
+    const middle = validColor(colors.backgroundMiddle) ? colors.backgroundMiddle : '#1c2541';
+    const end = validColor(colors.backgroundEnd) ? colors.backgroundEnd : '#0a192f';
+    if (document.body) {
+        document.body.style.background = 'linear-gradient(135deg, ' + start + ' 0%, ' + middle + ' 50%, ' + end + ' 100%)';
+    }
+
+    const siteName = String(settings.siteName || 'Cleany Clean').trim().slice(0, 80) || 'Cleany Clean';
+    document.querySelectorAll('[data-site-name]').forEach(function (element) {
+        element.textContent = siteName;
+    });
+    document.title = siteName + ' - Servicios y Productos de Limpieza Impecable';
+    renderProducts(catalogData);
 }
 
 // Filtrar Categorías (Recibe el elemento botón para evitar errores de evento)
@@ -155,8 +199,14 @@ function filterCategory(cat, buttonElement) {
 function addToCart(productId) {
     const product = catalogData.find(p => p.id === productId);
     if (!product) return;
-    
+
     const existingItem = cart.find(item => item.id === productId);
+    const stockKnown = product.stock !== null && product.stock !== undefined && Number.isFinite(Number(product.stock));
+    const quantityInCart = existingItem ? existingItem.quantity : 0;
+    if (stockKnown && quantityInCart >= Number(product.stock)) {
+        alert('No hay más unidades disponibles de ' + product.name + '.');
+        return;
+    }
 
     if (existingItem) {
         existingItem.quantity += 1;
@@ -171,10 +221,14 @@ function addToCart(productId) {
 function updateQuantity(productId, delta) {
     const item = cart.find(i => i.id === productId);
     if (item) {
-        item.quantity += delta;
-        if (item.quantity <= 0) {
-            cart = cart.filter(i => i.id !== productId);
+        const product = catalogData.find(p => p.id === productId);
+        const stockKnown = product && product.stock !== null && product.stock !== undefined && Number.isFinite(Number(product.stock));
+        if (delta > 0 && stockKnown && item.quantity >= Number(product.stock)) {
+            alert('No hay más unidades disponibles de ' + item.name + '.');
+            return;
         }
+        item.quantity += delta;
+        if (item.quantity <= 0) cart = cart.filter(i => i.id !== productId);
     }
     updateCartUI();
 }
@@ -339,12 +393,20 @@ function toggleCartModal() {
 }
 
 // Inicialización segura al cargar la ventana
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
     createBubbles();
     renderProducts(catalogData);
-    if (window.CleanyOrders && window.CleanyOrders.isCloudConfigured()) {
-        window.CleanyOrders.syncPendingOrders().catch(error => {
-            console.error('No se pudieron reintentar los pedidos pendientes:', error);
-        });
+    if (window.CleanyOrders) {
+        try {
+            const settings = await window.CleanyOrders.getSiteSettings();
+            if (settings) applySiteSettings(settings);
+        } catch (error) {
+            console.error('No se pudo cargar la configuración visual de la tienda:', error);
+        }
+        if (window.CleanyOrders.isCloudConfigured()) {
+            window.CleanyOrders.syncPendingOrders().catch(error => {
+                console.error('No se pudieron reintentar los pedidos pendientes:', error);
+            });
+        }
     }
 });

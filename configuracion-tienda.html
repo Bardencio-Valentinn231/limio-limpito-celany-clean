@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuración del sitio | Cleany Clean</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; }
+    body { font-family:'Poppins',sans-serif; background:linear-gradient(135deg,#0b132b 0%,#1c2541 50%,#0a192f 100%); color:#f1f5f9; }
+    .glass { background:rgba(15,23,42,.84); border:1px solid rgba(34,211,238,.2); backdrop-filter:blur(14px); }
+    .field { width:100%; border:1px solid #334155; background:#020617; border-radius:.65rem; padding:.65rem .75rem; color:#f8fafc; outline:none; }
+    .field:focus { border-color:#22d3ee; box-shadow:0 0 0 2px rgba(34,211,238,.12); }
+    .field-label { display:block; margin-bottom:.35rem; font-size:.75rem; color:#cbd5e1; font-weight:600; }
+    input[type=color] { display:block; width:100%; height:44px; background:#020617; border:1px solid #334155; border-radius:.6rem; padding:4px; cursor:pointer; }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-6 lg:p-8">
+  <main class="mx-auto max-w-7xl">
+    <header class="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <a href="gestor-de-pedidos.html" class="inline-flex items-center gap-2 text-sm text-cyan-300 hover:text-white"><i class="fa-solid fa-arrow-left"></i> Volver al gestor</a>
+      <div class="text-right"><p class="text-xs uppercase tracking-widest text-cyan-300">Cleany Clean</p><h1 class="text-2xl sm:text-3xl font-extrabold">Configuración de la tienda</h1></div>
+    </header>
+
+    <section id="loginPanel" class="glass mx-auto max-w-md rounded-3xl p-7 sm:p-9 shadow-2xl">
+      <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-400/10 text-3xl text-cyan-300"><i class="fa-solid fa-sliders"></i></div>
+      <h2 class="text-center text-2xl font-extrabold">Acceso a configuración</h2>
+      <p id="loginSubtitle" class="mt-2 mb-7 text-center text-sm text-slate-300">Ingresá para editar el catálogo y el diseño.</p>
+      <form id="loginForm" class="space-y-4">
+        <div id="emailField" class="hidden">
+          <label for="adminEmail" class="field-label">Email de administrador</label>
+          <input id="adminEmail" type="email" autocomplete="username" class="field" placeholder="admin@tudominio.com">
+        </div>
+        <label for="password" class="field-label">Contraseña</label>
+        <input id="password" type="password" autocomplete="current-password" required class="field" placeholder="Ingresá la contraseña">
+        <p id="loginError" class="hidden text-sm text-rose-300" role="alert"></p>
+        <button id="loginButton" class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 font-bold text-white hover:brightness-110" type="submit">Entrar <i class="fa-solid fa-arrow-right ml-2"></i></button>
+      </form>
+      <p id="loginNotice" class="mt-5 text-xs leading-relaxed text-amber-200/80"></p>
+    </section>
+
+    <section id="settingsPanel" class="hidden space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div><h2 class="text-xl font-bold">Editar productos y apariencia</h2><p class="text-sm text-slate-400">Los cambios se aplican a la tienda al guardar y recargarla.</p></div>
+        <button id="logoutButton" type="button" class="rounded-lg border border-slate-600 px-3 py-2 text-sm hover:bg-slate-800"><i class="fa-solid fa-right-from-bracket mr-1"></i> Cerrar sesión</button>
+      </div>
+
+      <section class="glass rounded-2xl p-5 sm:p-7">
+        <h3 class="mb-5 flex items-center gap-2 text-lg font-bold"><i class="fa-solid fa-store text-cyan-300"></i> Nombre del sitio y fondo</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <div>
+            <label for="siteName" class="field-label">Nombre visible de la tienda</label>
+            <input id="siteName" maxlength="80" class="field" value="Cleany Clean" placeholder="Nombre de la tienda">
+            <p class="mt-2 text-xs text-slate-400">Actualiza el nombre principal del sitio, el título del navegador y las etiquetas vinculadas.</p>
+            <div class="mt-5">
+              <p class="field-label">Vista previa del fondo</p>
+              <div id="colorPreview" class="flex min-h-28 items-end rounded-xl border border-white/10 p-4 shadow-inner" style="background:linear-gradient(135deg,#0b132b 0%,#1c2541 50%,#0a192f 100%)">
+                <span id="previewSiteName" class="font-bold text-white drop-shadow">Cleany Clean</span>
+              </div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div><label for="backgroundStart" class="field-label">Color inicial</label><input id="backgroundStart" type="color" value="#0b132b"><p id="startHex" class="mt-1 text-xs text-slate-400">#0b132b</p></div>
+            <div><label for="backgroundMiddle" class="field-label">Color intermedio</label><input id="backgroundMiddle" type="color" value="#1c2541"><p id="middleHex" class="mt-1 text-xs text-slate-400">#1c2541</p></div>
+            <div><label for="backgroundEnd" class="field-label">Color final</label><input id="backgroundEnd" type="color" value="#0a192f"><p id="endHex" class="mt-1 text-xs text-slate-400">#0a192f</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="glass rounded-2xl p-5 sm:p-7">
+        <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div><h3 class="flex items-center gap-2 text-lg font-bold"><i class="fa-solid fa-boxes-stacked text-cyan-300"></i> Productos y servicios</h3><p class="mt-1 text-sm text-slate-400">Editá los nombres, precios y cantidades disponibles. Podés agregar o quitar artículos.</p></div>
+          <button id="addProduct" type="button" class="rounded-xl border border-cyan-400/40 px-4 py-2.5 text-sm font-bold text-cyan-200 hover:bg-cyan-400/10"><i class="fa-solid fa-plus mr-2"></i>Agregar producto</button>
+        </div>
+        <div id="productsEditor" class="space-y-4"></div>
+        <p class="mt-5 rounded-xl border border-amber-300/20 bg-amber-400/5 p-3 text-xs leading-relaxed text-amber-100/90">La cantidad se usa como stock visible y limita cuántas unidades se pueden agregar al carrito por compra. El stock no se descuenta automáticamente al vender; para inventario central con descuento simultáneo hace falta una operación de servidor.</p>
+      </section>
+
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p id="saveStatus" class="text-sm text-slate-300" role="status">Cargando configuración...</p>
+        <button id="saveSettings" type="button" class="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-6 py-3 font-bold text-white shadow-lg hover:brightness-110"><i class="fa-solid fa-floppy-disk mr-2"></i>Guardar configuración</button>
+      </div>
+      <p class="text-xs leading-relaxed text-slate-500">Modo local: los cambios se guardan solo en este navegador y origen. Para sincronizar cambios a todos los visitantes y dispositivos, completá orders-config.js y ejecutá la versión actualizada de supabase/schema.sql en tu proyecto.</p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="orders-config.js"></script>
+  <script src="orders-store.js"></script>
+  <script>
+    const LOCAL_PASSWORD = 'santi123';
+    const DEFAULT_SETTINGS = {
+      siteName: 'Cleany Clean',
+      colors: { backgroundStart: '#0b132b', backgroundMiddle: '#1c2541', backgroundEnd: '#0a192f' },
+      products: [
+        { id: 1, name: 'Detergente Bio-Acuático 5L', category: 'productos', price: 12500, stock: null, rating: '4.9', icon: 'fa-bottle-droplet', badge: 'Más Vendido', description: 'Fórmula concentrada biodegradable de alta espuma y aroma marino.' },
+        { id: 2, name: 'Limpiavidrios Cristal Brillo 1L', category: 'productos', price: 4800, stock: null, rating: '4.8', icon: 'fa-spray-can', badge: 'Efecto Espejo', description: 'Elimina manchas de agua y grasa instantáneamente sin dejar marcas.' },
+        { id: 3, name: 'Kit Limpieza Profunda Hogar', category: 'productos', price: 24900, stock: null, rating: '5.0', icon: 'fa-box-open', badge: 'Combo Ahorro', description: 'Incluye desinfectante, microfibras premium, lustrador y guantes.' },
+        { id: 4, name: 'Servicio Limpieza Residencia (4h)', category: 'servicios', price: 35000, stock: null, rating: '4.9', icon: 'fa-house-chimney-window', badge: 'Servicio VIP', description: 'Atención especializada con insumos y maquinarias Cleany Clean.' },
+        { id: 5, name: 'Desinfección de Tapizados y Sofás', category: 'servicios', price: 28000, stock: null, rating: '4.7', icon: 'fa-couch', badge: 'Anti-Ácaros', description: 'Extracción e inyección a vapor para sillones, colchones y alfombras.' },
+        { id: 6, name: 'Desinfectante Amonio Cuaternario 5L', category: 'productos', price: 15200, stock: null, rating: '4.9', icon: 'fa-shield-virus', badge: 'Grado Médico', description: 'Elimina el 99.9% de bacterias y virus en todo tipo de pisos y superficies.' }
+      ]
+    };
+    const $ = id => document.getElementById(id);
+    let settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+    let refreshTimer = null;
+    const isCloud = () => Boolean(window.CleanyOrders && window.CleanyOrders.isCloudConfigured());
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+    function normalizeSettings(value) {
+      const source = value && typeof value === 'object' ? value : {};
+      const sourceColors = source.colors || {};
+      const sourceProducts = Array.isArray(source.products) && source.products.length ? source.products : DEFAULT_SETTINGS.products;
+      const colors = {};
+      ['backgroundStart','backgroundMiddle','backgroundEnd'].forEach(key => {
+        colors[key] = /^#[0-9a-f]{6}$/i.test(String(sourceColors[key] || '')) ? sourceColors[key] : DEFAULT_SETTINGS.colors[key];
+      });
+      const products = sourceProducts.map((p, index) => {
+        const fallback = DEFAULT_SETTINGS.products.find(item => Number(item.id) === Number(p.id)) || {};
+        const parsedPrice = Number(p.price);
+        let stock = (p.stock === null || p.stock === undefined || p.stock === '') ? null : Number(p.stock);
+        if (!Number.isInteger(stock) || stock < 0) stock = null;
+        return {
+          id: Number(p.id) > 0 ? Number(p.id) : index + 1,
+          name: String(p.name || fallback.name || 'Nuevo producto').slice(0, 120),
+          category: p.category === 'servicios' ? 'servicios' : 'productos',
+          price: Number.isFinite(parsedPrice) && parsedPrice >= 0 ? parsedPrice : Number(fallback.price) || 0,
+          stock: stock,
+          description: String(p.description || fallback.description || '').slice(0, 400),
+          icon: /^fa-[a-z0-9-]+$/i.test(String(p.icon || fallback.icon || '')) ? String(p.icon || fallback.icon) : 'fa-box-open',
+          badge: String(p.badge || fallback.badge || 'Nuevo').slice(0, 40),
+          rating: String(p.rating || fallback.rating || 'Nuevo').slice(0, 12)
+        };
+      });
+      return { siteName: String(source.siteName || DEFAULT_SETTINGS.siteName).trim().slice(0,80) || DEFAULT_SETTINGS.siteName, colors: colors, products: products };
+    }
+
+    function updatePreview() {
+      const name = $('siteName').value.trim() || 'Nombre de la tienda';
+      $('previewSiteName').textContent = name;
+      const start = $('backgroundStart').value;
+      const middle = $('backgroundMiddle').value;
+      const end = $('backgroundEnd').value;
+      $('colorPreview').style.background = 'linear-gradient(135deg,' + start + ' 0%,' + middle + ' 50%,' + end + ' 100%)';
+      $('startHex').textContent = start.toUpperCase();
+      $('middleHex').textContent = middle.toUpperCase();
+      $('endHex').textContent = end.toUpperCase();
+    }
+
+    function fieldMarkup(label, field, value, type, extra) {
+      return '<label class="block"><span class="field-label">' + label + '</span><input class="field" data-field="' + field + '" type="' + type + '" value="' + esc(value) + '" ' + (extra || '') + '></label>';
+    }
+
+    function snapshotProductInputs() {
+      const rows = Array.from($('productsEditor').querySelectorAll('[data-product-id]'));
+      if (!rows.length) return;
+      settings.products = rows.map(row => {
+        const previous = settings.products.find(item => Number(item.id) === Number(row.dataset.productId)) || {};
+        const value = field => row.querySelector('[data-field="' + field + '"]').value;
+        const rawPrice = value('price').trim();
+        const rawStock = value('stock').trim();
+        return {
+          id: Number(row.dataset.productId),
+          name: value('name'),
+          category: value('category') === 'servicios' ? 'servicios' : 'productos',
+          price: rawPrice === '' ? '' : Number(rawPrice),
+          stock: rawStock === '' ? null : Number(rawStock),
+          description: value('description'),
+          icon: previous.icon || 'fa-box-open',
+          badge: previous.badge || 'Nuevo',
+          rating: previous.rating || 'Nuevo'
+        };
+      });
+    }
+
+    function renderProducts() {
+      const container = $('productsEditor');
+      container.innerHTML = '';
+      settings.products.forEach(product => {
+        const row = document.createElement('article');
+        row.className = 'rounded-2xl border border-slate-700 bg-slate-950/50 p-4 sm:p-5';
+        row.dataset.productId = String(product.id);
+        row.innerHTML =
+          '<div class="mb-4 flex flex-wrap items-start justify-between gap-3"><div><p class="font-bold text-cyan-200">Artículo #' + product.id + '</p><p class="text-xs text-slate-500">Se mostrará en el catálogo de la tienda</p></div><button type="button" data-remove class="rounded-lg border border-rose-400/30 px-3 py-2 text-xs font-bold text-rose-200 hover:bg-rose-400/10"><i class="fa-solid fa-trash mr-1"></i>Quitar</button></div>' +
+          '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">' +
+            fieldMarkup('Nombre del producto/servicio','name',product.name,'text','required maxlength="120"') +
+            fieldMarkup('Precio (ARS)','price',product.price,'number','required min="0" step="0.01"') +
+            fieldMarkup('Cantidad disponible','stock',product.stock === null ? '' : product.stock,'number','min="0" step="1" placeholder="Sin límite"') +
+            '<label class="block"><span class="field-label">Tipo</span><select class="field" data-field="category"><option value="productos" ' + (product.category === 'productos' ? 'selected' : '') + '>Producto</option><option value="servicios" ' + (product.category === 'servicios' ? 'selected' : '') + '>Servicio</option></select></label>' +
+            '<label class="block sm:col-span-2 lg:col-span-4"><span class="field-label">Descripción</span><textarea class="field" data-field="description" rows="2" maxlength="400">' + esc(product.description) + '</textarea></label>' +
+          '</div>';
+        row.querySelector('[data-remove]').addEventListener('click', () => {
+          snapshotProductInputs();
+          settings.products = settings.products.filter(item => Number(item.id) !== Number(product.id));
+          renderProducts();
+          setStatus('Artículo quitado del borrador. Guardá para aplicar el cambio.', false);
+        });
+        container.appendChild(row);
+      });
+    }
+
+    function setStatus(message, success) {
+      $('saveStatus').textContent = message;
+      $('saveStatus').className = 'text-sm ' + (success ? 'text-emerald-300' : 'text-amber-200');
+    }
+
+    function populateForm() {
+      $('siteName').value = settings.siteName;
+      $('backgroundStart').value = settings.colors.backgroundStart;
+      $('backgroundMiddle').value = settings.colors.backgroundMiddle;
+      $('backgroundEnd').value = settings.colors.backgroundEnd;
+      updatePreview();
+      renderProducts();
+    }
+
+    function collectSettings() {
+      const products = Array.from($('productsEditor').querySelectorAll('[data-product-id]')).map(row => {
+        const previous = settings.products.find(item => Number(item.id) === Number(row.dataset.productId)) || {};
+        const value = field => row.querySelector('[data-field="' + field + '"]').value;
+        const rawStock = value('stock').trim();
+        return {
+          id: Number(row.dataset.productId),
+          name: value('name').trim(),
+          category: value('category') === 'servicios' ? 'servicios' : 'productos',
+          price: Number(value('price')),
+          stock: rawStock === '' ? null : Number(rawStock),
+          description: value('description').trim(),
+          icon: previous.icon || 'fa-box-open',
+          badge: previous.badge || 'Nuevo',
+          rating: previous.rating || 'Nuevo'
+        };
+      });
+      if (!products.length) throw new Error('Agregá al menos un producto o servicio al catálogo.');
+      for (const product of products) {
+        if (!product.name) throw new Error('Todos los artículos deben tener un nombre.');
+        if (String($('productsEditor').querySelector('[data-product-id="' + product.id + '"] [data-field="price"]').value).trim() === '' || !Number.isFinite(product.price) || product.price < 0) throw new Error('Revisá los precios: deben ser números mayores o iguales a cero.');
+        if (product.stock !== null && (!Number.isInteger(product.stock) || product.stock < 0)) throw new Error('La cantidad disponible debe ser un entero mayor o igual a cero, o quedar vacía.');
+      }
+      const ids = products.map(p => p.id);
+      if (new Set(ids).size !== ids.length) throw new Error('Hay artículos con el mismo identificador. Quitá el duplicado y volvé a guardar.');
+      return {
+        siteName: $('siteName').value.trim().slice(0,80) || 'Cleany Clean',
+        colors: {
+          backgroundStart: $('backgroundStart').value,
+          backgroundMiddle: $('backgroundMiddle').value,
+          backgroundEnd: $('backgroundEnd').value
+        },
+        products: products
+      };
+    }
+
+    async function boot() {
+      const cloud = isCloud();
+      $('emailField').classList.toggle('hidden', !cloud);
+      $('adminEmail').required = cloud;
+      $('loginSubtitle').textContent = cloud ? 'Ingresá con tu usuario administrador de Supabase.' : 'Ingresá para editar los productos y colores de esta tienda.';
+      $('loginNotice').textContent = cloud
+        ? 'Modo central activo: el catálogo y los colores se guardan para todos los visitantes. Las escrituras requieren el rol admin.'
+        : 'Modo local: el acceso es una barrera visual y los cambios solo se comparten en el mismo navegador y origen. Configurá Supabase para aplicarlos a todos los visitantes.';
+    }
+
+    $('loginForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      $('loginError').classList.add('hidden');
+      $('loginButton').disabled = true;
+      $('loginButton').textContent = 'Verificando acceso...';
+      try {
+        if (isCloud()) {
+          await window.CleanyOrders.signInAdmin($('adminEmail').value, $('password').value);
+        } else if ($('password').value !== LOCAL_PASSWORD) {
+          throw new Error('La contraseña local no es correcta.');
+        }
+        const saved = await window.CleanyOrders.getSiteSettings();
+        settings = normalizeSettings(saved || DEFAULT_SETTINGS);
+        $('loginPanel').classList.add('hidden');
+        $('settingsPanel').classList.remove('hidden');
+        populateForm();
+        setStatus(isCloud() ? 'Configuración central cargada.' : 'Configuración local cargada.', true);
+      } catch (error) {
+        $('loginError').textContent = error.message || 'No se pudo abrir la configuración.';
+        $('loginError').classList.remove('hidden');
+      } finally {
+        $('loginButton').disabled = false;
+        $('loginButton').innerHTML = 'Entrar <i class="fa-solid fa-arrow-right ml-2"></i>';
+      }
+    });
+
+    $('addProduct').addEventListener('click', () => {
+      snapshotProductInputs();
+      const nextId = Math.max(0, ...settings.products.map(p => Number(p.id) || 0)) + 1;
+      settings.products.push({ id: nextId, name: 'Nuevo producto', category: 'productos', price: 0, stock: null, description: '', icon: 'fa-box-open', badge: 'Nuevo', rating: 'Nuevo' });
+      renderProducts();
+      setStatus('Artículo nuevo añadido al borrador. Completá los datos y guardá.', false);
+    });
+
+    ['siteName','backgroundStart','backgroundMiddle','backgroundEnd'].forEach(id => $(id).addEventListener('input', updatePreview));
+
+    $('saveSettings').addEventListener('click', async () => {
+      const button = $('saveSettings');
+      button.disabled = true;
+      button.textContent = 'Guardando...';
+      try {
+        const next = collectSettings();
+        const result = await window.CleanyOrders.saveSiteSettings(next);
+        settings = normalizeSettings(next);
+        populateForm();
+        setStatus(result.cloud
+          ? 'Guardado en Supabase. Los visitantes verán los cambios al recargar la tienda.'
+          : 'Guardado en este navegador. Abrí index.html desde el mismo origen para ver los cambios.', true);
+      } catch (error) {
+        setStatus('No se pudo guardar: ' + (error.message || 'Error desconocido') + (isCloud() ? ' Verificá que hayas ejecutado la versión actual de supabase/schema.sql.' : ''), false);
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '<i class="fa-solid fa-floppy-disk mr-2"></i>Guardar configuración';
+      }
+    });
+
+    $('logoutButton').addEventListener('click', async () => {
+      try { if (isCloud()) await window.CleanyOrders.signOutAdmin(); } catch (error) { console.error(error); }
+      $('settingsPanel').classList.add('hidden');
+      $('loginPanel').classList.remove('hidden');
+      $('password').value = '';
+      $('adminEmail').value = '';
+    });
+
+    boot();
+  </script>
+</body>
+</html>
