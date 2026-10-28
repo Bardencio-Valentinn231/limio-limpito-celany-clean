@@ -8,62 +8,157 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg,#0b132b 0%,#1c2541 50%,#0a192f 100%); color:#f1f5f9; }
-    .glass { background:rgba(15,23,42,.78); border:1px solid rgba(34,211,238,.25); backdrop-filter:blur(16px); }
+    body { font-family:'Poppins',sans-serif; background:linear-gradient(135deg,#0b132b 0%,#1c2541 50%,#0a192f 100%); color:#f1f5f9; }
+    .glass { background:rgba(15,23,42,.82); border:1px solid rgba(34,211,238,.22); backdrop-filter:blur(16px); }
+    .invoice-paper { background:#fff; color:#172033; font-family:Arial,sans-serif; }
+    .invoice-paper th,.invoice-paper td { border-bottom:1px solid #dbe1e8; padding:9px 7px; text-align:left; }
+    .invoice-paper .invoice-letter { border:2px solid #172033; display:flex; align-items:center; justify-content:center; width:54px; height:54px; font-size:32px; font-weight:800; }
+    @media print {
+      body { background:#fff!important; color:#111!important; padding:0!important; }
+      body * { visibility:hidden!important; }
+      #invoicePreview,#invoicePreview * { visibility:visible!important; }
+      #invoicePreview { position:absolute!important; inset:0!important; width:100%!important; max-width:none!important; margin:0!important; border:0!important; box-shadow:none!important; }
+      #invoicePreview .no-print { display:none!important; }
+      .invoice-paper { padding:0!important; }
+      @page { size:A4; margin:14mm; }
+    }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-5">
-  <main class="glass w-full max-w-md rounded-3xl p-7 sm:p-9 shadow-2xl shadow-cyan-950/40">
-    <a href="index.html" class="inline-flex items-center gap-2 text-sm text-cyan-300 hover:text-white mb-8">
-      <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Volver a Cleany Clean
-    </a>
-    <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-400/10 text-3xl text-cyan-300">
-      <i class="fa-solid fa-clipboard-list" aria-hidden="true"></i>
-    </div>
-    <h1 class="text-center text-2xl sm:text-3xl font-extrabold text-white">Gestor de pedidos</h1>
-    <p class="mt-2 mb-7 text-center text-sm text-slate-300">Ingresá la contraseña para continuar.</p>
+<body class="min-h-screen p-4 sm:p-6 lg:p-8">
+  <main class="mx-auto max-w-7xl">
+    <header class="mb-8 flex flex-wrap items-center justify-between gap-4">
+      <a href="index.html" class="inline-flex items-center gap-2 text-sm text-cyan-300 hover:text-white"><i class="fa-solid fa-arrow-left"></i> Volver a Cleany Clean</a>
+      <div class="text-right"><p class="text-xs uppercase tracking-widest text-cyan-300">Cleany Clean</p><h1 class="text-2xl sm:text-3xl font-extrabold">Gestor de pedidos</h1></div>
+    </header>
 
-    <form id="loginForm" class="space-y-4">
-      <label for="password" class="block text-sm font-semibold text-slate-200">Contraseña</label>
-      <div class="relative">
-        <i class="fa-solid fa-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true"></i>
-        <input id="password" name="password" type="password" autocomplete="current-password" required
-          class="w-full rounded-xl border border-slate-700 bg-slate-950/80 py-3 pl-11 pr-4 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
-          placeholder="Ingresá la contraseña">
-      </div>
-      <p id="loginError" class="hidden text-sm text-rose-300" role="alert">La contraseña no es correcta. Intentá de nuevo.</p>
-      <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 font-bold text-white transition hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-cyan-300">
-        Entrar <i class="fa-solid fa-arrow-right ml-2" aria-hidden="true"></i>
-      </button>
-    </form>
-
-    <section id="managerPlaceholder" class="hidden mt-6 rounded-2xl border border-cyan-400/20 bg-slate-950/50 p-5" aria-live="polite">
-      <h2 class="text-lg font-bold text-cyan-200"><i class="fa-solid fa-circle-check mr-2" aria-hidden="true"></i>Acceso concedido</h2>
-      <p class="mt-2 text-sm text-slate-300">El acceso está listo. En el próximo paso vamos a completar acá las funciones del gestor de pedidos.</p>
+    <section id="loginPanel" class="glass mx-auto max-w-md rounded-3xl p-7 sm:p-9 shadow-2xl">
+      <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-400/10 text-3xl text-cyan-300"><i class="fa-solid fa-lock"></i></div>
+      <h2 class="text-center text-2xl font-extrabold">Acceso al gestor</h2>
+      <p class="mt-2 mb-7 text-center text-sm text-slate-300">Ingresá la contraseña para continuar.</p>
+      <form id="loginForm" class="space-y-4">
+        <label for="password" class="block text-sm font-semibold">Contraseña</label>
+        <input id="password" type="password" autocomplete="current-password" required class="w-full rounded-xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-white outline-none focus:border-cyan-400" placeholder="Ingresá la contraseña">
+        <p id="loginError" class="hidden text-sm text-rose-300" role="alert">La contraseña no es correcta. Intentá de nuevo.</p>
+        <button class="w-full rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 font-bold text-white hover:brightness-110" type="submit">Entrar <i class="fa-solid fa-arrow-right ml-2"></i></button>
+      </form>
+      <p class="mt-5 text-xs text-amber-200/80">Aviso: este acceso es una barrera visual del prototipo, no una autenticación segura.</p>
     </section>
-    <p class="mt-7 text-center text-xs text-slate-500">Cleany Clean · Panel de pedidos</p>
+
+    <section id="dashboard" class="hidden space-y-6">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="glass rounded-2xl p-5"><p class="text-sm text-slate-300">Pedidos guardados en este navegador</p><p id="ordersCount" class="mt-2 text-3xl font-extrabold text-cyan-300">0</p></div>
+        <div class="glass rounded-2xl p-5"><p class="text-sm text-slate-300">Total acumulado</p><p id="ordersTotal" class="mt-2 text-3xl font-extrabold text-white">$ 0</p></div>
+        <div class="glass rounded-2xl p-5 flex flex-col justify-between gap-3"><p class="text-sm text-slate-300">Facturación</p><p class="text-sm">Elegí una compra y generá una vista previa A o B para imprimir.</p></div>
+      </div>
+
+      <div class="glass rounded-2xl p-5">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div><h2 class="text-xl font-bold">Compras recibidas</h2><p class="text-sm text-slate-400">Datos del cliente, artículos, cantidades, precios y pago.</p></div>
+          <div class="flex flex-wrap gap-2">
+            <input id="searchOrders" type="search" placeholder="Buscar cliente o pedido..." class="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white">
+            <button id="refreshOrders" type="button" class="rounded-lg border border-slate-600 px-3 py-2 text-sm hover:bg-slate-800"><i class="fa-solid fa-rotate"></i> Actualizar</button>
+          </div>
+        </div>
+        <div id="ordersEmpty" class="rounded-xl border border-dashed border-slate-700 p-8 text-center text-slate-400">Todavía no hay compras guardadas en este navegador.</div>
+        <div id="ordersTableWrap" class="hidden overflow-x-auto">
+          <table class="w-full min-w-[850px] text-left text-sm">
+            <thead class="text-xs uppercase text-slate-400"><tr><th class="p-3">Pedido / fecha</th><th class="p-3">Cliente</th><th class="p-3">Contacto</th><th class="p-3">Artículos</th><th class="p-3">Total</th><th class="p-3">Pago</th><th class="p-3">Factura</th></tr></thead>
+            <tbody id="ordersRows"></tbody>
+          </table>
+        </div>
+      </div>
+      <p class="text-xs leading-relaxed text-slate-400">Importante: esta versión guarda los pedidos en el almacenamiento local del navegador donde se hizo la compra. No sincroniza pedidos entre dispositivos o clientes. Para recibir compras de todos los visitantes hace falta conectar una base de datos y un servidor. Las facturas de abajo son vistas previas no fiscales; no reemplazan comprobantes autorizados por ARCA ni asignan CAE.</p>
+    </section>
+
+    <section id="invoicePreview" class="hidden mx-auto mt-8 max-w-4xl rounded-2xl bg-white p-4 sm:p-8 shadow-2xl">
+      <div class="no-print mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+        <div><h2 class="font-bold text-slate-900">Vista previa de factura</h2><p class="text-xs text-slate-500">Documento de muestra, no válido como comprobante fiscal.</p></div>
+        <div class="flex flex-wrap gap-2">
+          <label for="invoiceType" class="sr-only">Tipo de factura</label>
+          <select id="invoiceType" class="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900"><option value="B">Factura B</option><option value="A">Factura A</option></select>
+          <button id="printInvoice" type="button" class="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white"><i class="fa-solid fa-print mr-2"></i>Imprimir</button>
+          <button id="closeInvoice" type="button" class="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700">Cerrar</button>
+        </div>
+      </div>
+      <div id="invoiceContent" class="invoice-paper p-2 sm:p-5"></div>
+      <p class="no-print mt-5 rounded-lg bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">Vista previa orientativa. La clase de comprobante aplicable y los impuestos deben ser verificados según la condición fiscal real del vendedor y comprador. No es una factura autorizada.</p>
+    </section>
   </main>
 
   <script>
-    // Acceso temporal para el prototipo inicial. No es autenticación segura.
     const ACCESS_PASSWORD = "santi123";
-    const loginForm = document.getElementById("loginForm");
-    const passwordInput = document.getElementById("password");
-    const loginError = document.getElementById("loginError");
-    const managerPlaceholder = document.getElementById("managerPlaceholder");
+    const ORDERS_KEY = "cleanyCleanOrders";
+    let selectedOrder = null;
+    const $ = id => document.getElementById(id);
+    const money = value => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:2}).format(Number(value)||0);
+    const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    const formatDate = value => { const d = new Date(value); return Number.isNaN(d.getTime()) ? 'Fecha no disponible' : d.toLocaleString('es-AR'); };
+    function readOrders() { try { const data = JSON.parse(localStorage.getItem(ORDERS_KEY)||'[]'); return Array.isArray(data) ? data : []; } catch(e) { return []; } }
 
-    loginForm.addEventListener("submit", function (event) {
+    $('loginForm').addEventListener('submit', event => {
       event.preventDefault();
-      if (passwordInput.value === ACCESS_PASSWORD) {
-        loginError.classList.add("hidden");
-        loginForm.classList.add("hidden");
-        managerPlaceholder.classList.remove("hidden");
+      if ($('password').value === ACCESS_PASSWORD) {
+        $('loginError').classList.add('hidden');
+        $('loginPanel').classList.add('hidden');
+        $('dashboard').classList.remove('hidden');
+        renderOrders();
       } else {
-        loginError.classList.remove("hidden");
-        passwordInput.focus();
-        passwordInput.select();
+        $('loginError').classList.remove('hidden');
+        $('password').focus(); $('password').select();
       }
     });
+    $('refreshOrders').addEventListener('click', renderOrders);
+    $('searchOrders').addEventListener('input', renderOrders);
+    $('invoiceType').addEventListener('change', renderInvoice);
+    $('printInvoice').addEventListener('click', () => { if (selectedOrder) window.print(); });
+    $('closeInvoice').addEventListener('click', () => $('invoicePreview').classList.add('hidden'));
+
+    function renderOrders() {
+      const orders = readOrders();
+      const query = $('searchOrders').value.trim().toLocaleLowerCase('es-AR');
+      const filtered = orders.filter(o => [o.id,o.customer?.nombre,o.customer?.email,o.customer?.cuit].some(v => String(v||'').toLocaleLowerCase('es-AR').includes(query)));
+      $('ordersCount').textContent = orders.length;
+      $('ordersTotal').textContent = money(orders.reduce((sum,o)=>sum+(Number(o.total)||0),0));
+      $('ordersEmpty').classList.toggle('hidden', filtered.length > 0);
+      $('ordersEmpty').textContent = orders.length ? 'No hay pedidos que coincidan con la búsqueda.' : 'Todavía no hay compras guardadas en este navegador.';
+      $('ordersTableWrap').classList.toggle('hidden', filtered.length === 0);
+      $('ordersRows').innerHTML = filtered.map(o => {
+        const customer = o.customer || {};
+        const items = Array.isArray(o.items) ? o.items : [];
+        const count = items.reduce((sum,item)=>sum+(Number(item.quantity)||0),0);
+        return '<tr class="border-t border-slate-800 align-top"><td class="p-3"><strong>'+esc(o.id)+'</strong><br><span class="text-xs text-slate-400">'+esc(formatDate(o.createdAt))+'</span></td><td class="p-3">'+esc(customer.nombre)+'<br><span class="text-xs text-slate-400">DNI: '+esc(customer.dni)+' · CUIT: '+esc(customer.cuit)+'</span></td><td class="p-3">'+esc(customer.email)+'<br>'+esc(customer.telefono)+'</td><td class="p-3">'+count+' ítem(s)<br><span class="text-xs text-slate-400">'+esc(items.map(i=>i.name+' × '+i.quantity).join(', '))+'</span></td><td class="p-3 font-bold">'+money(o.total)+'</td><td class="p-3">'+esc(o.formaPago)+'</td><td class="p-3"><div class="flex gap-1"><button data-invoice="A" data-order="'+esc(o.id)+'" class="rounded bg-cyan-700 px-2 py-1 text-xs font-bold text-white">A</button><button data-invoice="B" data-order="'+esc(o.id)+'" class="rounded bg-blue-700 px-2 py-1 text-xs font-bold text-white">B</button></div></td></tr>';
+      }).join('');
+      $('ordersRows').querySelectorAll('button[data-order]').forEach(button => button.addEventListener('click', () => {
+        selectedOrder = readOrders().find(o => o.id === button.dataset.order) || null;
+        if (!selectedOrder) return;
+        $('invoiceType').value = button.dataset.invoice;
+        $('invoicePreview').classList.remove('hidden');
+        renderInvoice();
+        $('invoicePreview').scrollIntoView({behavior:'smooth',block:'start'});
+      }));
+    }
+
+    function renderInvoice() {
+      if (!selectedOrder) return;
+      const o = selectedOrder, c = o.customer || {}, items = Array.isArray(o.items) ? o.items : [];
+      const type = $('invoiceType').value;
+      const subtotal = Number(o.subtotal ?? o.total) || 0;
+      $('invoiceContent').innerHTML = `
+        <div class="flex items-start justify-between gap-4 border-b-2 border-slate-800 pb-5">
+          <div><h2 class="text-2xl font-extrabold">Cleany Clean</h2><p class="mt-1 text-sm">Productos y servicios de limpieza</p><p class="mt-2 text-xs text-slate-600">Datos fiscales del emisor: completar antes de uso real</p></div>
+          <div class="invoice-letter">${type}</div>
+          <div class="text-right text-sm"><p class="font-bold">FACTURA ${type}</p><p class="mt-1 text-xs">N.º de muestra: ${esc(o.id)}</p><p class="mt-1 text-xs">Fecha: ${esc(formatDate(o.createdAt))}</p></div>
+        </div>
+        <div class="grid grid-cols-1 gap-4 border-b border-slate-300 py-5 sm:grid-cols-2">
+          <div><p class="text-xs uppercase text-slate-500">Cliente</p><p class="mt-1 font-bold">${esc(c.nombre)}</p><p class="text-sm">DNI: ${esc(c.dni)} · CUIT/CUIL: ${esc(c.cuit)}</p><p class="text-sm">IVA: ${esc(c.iva)}</p></div>
+          <div><p class="text-xs uppercase text-slate-500">Contacto y domicilio</p><p class="mt-1 text-sm">${esc(c.email)} · ${esc(c.telefono)}</p><p class="text-sm">${esc(c.direccion)} ${esc(c.piso)}</p><p class="text-sm">${esc(c.ciudad)}, ${esc(c.provincia)} · CP ${esc(c.cp)}</p></div>
+        </div>
+        <div class="mt-5 overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>Cant.</th><th>Descripción</th><th>Precio unitario</th><th>Importe</th></tr></thead><tbody>
+        ${items.map(item=>'<tr><td>'+esc(item.quantity)+'</td><td>'+esc(item.name)+'</td><td>'+money(item.price)+'</td><td>'+money((Number(item.price)||0)*(Number(item.quantity)||0))+'</td></tr>').join('')}
+        </tbody></table></div>
+        <div class="ml-auto mt-6 max-w-xs space-y-2 text-sm"><div class="flex justify-between"><span>Subtotal</span><strong>${money(subtotal)}</strong></div><div class="flex justify-between border-t-2 border-slate-800 pt-3 text-lg"><span>TOTAL</span><strong>${money(o.total)}</strong></div></div>
+        <div class="mt-8 border-t border-slate-300 pt-4 text-xs text-slate-500"><p>Forma de pago: ${esc(o.formaPago)}</p><p class="mt-2 font-bold">VISTA PREVIA NO FISCAL — NO ES UN COMPROBANTE AUTORIZADO</p><p>Sin CAE/CAEA ni numeración fiscal oficial.</p></div>`;
+    }
   </script>
 </body>
 </html>
