@@ -51,3 +51,13 @@ La pantalla **configuracion-tienda.html** se abre desde el botón **Configurar p
 - Si todavía no configuraste Supabase, la pantalla guarda cambios en el almacenamiento local de ese navegador y origen. No se comparten entre distintos dispositivos o dominios.
 - **Importante:** si ya habías ejecutado el SQL antes de que existiera la tabla `site_settings`, volvé a ejecutar el archivo actualizado `supabase/schema.sql` completo desde SQL Editor. Las instrucciones son idempotentes para las tablas y políticas existentes.
 - La cantidad configurada es un stock visible para limitar las unidades agregadas a cada carrito. Esta versión no descuenta automáticamente el stock después de cada venta; para prevenir ventas simultáneas del mismo stock se necesita una operación de inventario en servidor.
+
+
+## 6. Imágenes PNG y logo personalizado
+
+Desde **configuracion-tienda.html** podés cargar PNG, JPG o WebP para cada artículo y un logo para el encabezado y el pie. Las imágenes se redimensionan y comprimen en el navegador como WebP (manteniendo la transparencia cuando el navegador lo admite) para reducir el tamaño de almacenamiento. El original puede pesar hasta 10 MB antes de optimizar.
+
+- Con Supabase activo, las imágenes optimizadas se guardan dentro del JSON de `site_settings` y las reciben los visitantes cuando abren la tienda. No hace falta crear un bucket separado.
+- En modo local, se guardan en el almacenamiento de ese navegador y origen, así que no se comparten con otros dispositivos.
+- Si ya se cargaron imágenes grandes o muchas imágenes, evitá agregar demasiadas imágenes por artículo: se almacenan junto con el resto de la configuración.
+- El archivo `index.html` incluye una animación inicial de telón de burbujas que se abre y genera burbujas decorativas desde los bordes cuando se desplaza la página. El efecto respeta la preferencia de reducir movimiento del navegador.
