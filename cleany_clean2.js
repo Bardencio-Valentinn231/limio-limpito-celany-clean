@@ -90,6 +90,66 @@ function createBubbles() {
     }
 }
 
+// Rellenar los dos paneles del telón inicial con burbujas.
+function createBubbleCurtainBubbles() {
+    const curtain = document.getElementById('bubbleCurtain');
+    if (!curtain) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        curtain.remove();
+        return;
+    }
+
+    ['curtainLeft', 'curtainRight'].forEach(panelId => {
+        const panel = document.getElementById(panelId);
+        if (!panel || panel.childElementCount) return;
+        for (let i = 0; i < 24; i += 1) {
+            const bubble = document.createElement('span');
+            bubble.className = 'curtain-bubble';
+            bubble.style.setProperty('--bubble-size', (Math.random() * 46 + 14).toFixed(0) + 'px');
+            bubble.style.setProperty('--bubble-left', (Math.random() * 94).toFixed(1) + '%');
+            bubble.style.setProperty('--bubble-top', (Math.random() * 96).toFixed(1) + '%');
+            bubble.style.setProperty('--bubble-delay', (Math.random() * 0.7).toFixed(2) + 's');
+            panel.appendChild(bubble);
+        }
+    });
+    curtain.classList.add('is-opening');
+}
+
+// Emitir burbujas desde ambos bordes al subir o bajar por la portada.
+function initializeEdgeBubbles() {
+    const layer = document.getElementById('edgeBubbleLayer');
+    if (!layer || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+
+    let previousScrollY = window.scrollY;
+    let lastBurstAt = 0;
+    window.addEventListener('scroll', () => {
+        const currentScrollY = window.scrollY;
+        const delta = currentScrollY - previousScrollY;
+        previousScrollY = currentScrollY;
+        if (Math.abs(delta) < 2) return;
+
+        const now = Date.now();
+        if (now - lastBurstAt < 105) return;
+        lastBurstAt = now;
+        const direction = delta > 0 ? 'down' : 'up';
+
+        for (let i = 0; i < 4; i += 1) {
+            const side = i % 2 === 0 ? 'left' : 'right';
+            const bubble = document.createElement('span');
+            const size = Math.round(Math.random() * 28 + 12);
+            bubble.className = 'edge-bubble edge-bubble--' + side + ' edge-bubble--' + direction;
+            bubble.style.width = size + 'px';
+            bubble.style.height = size + 'px';
+            bubble.style.top = Math.round(Math.random() * Math.max(100, window.innerHeight - 90)) + 'px';
+            bubble.style.setProperty('--edge-offset', Math.round(Math.random() * 18) + 'px');
+            bubble.style.setProperty('--bubble-duration', (Math.random() * 0.65 + 0.85).toFixed(2) + 's');
+            layer.appendChild(bubble);
+            bubble.addEventListener('animationend', () => bubble.remove(), { once: true });
+            window.setTimeout(() => bubble.remove(), 2200);
+        }
+    }, { passive: true });
+}
+
 // Renderizar Productos
 function renderProducts(items) {
     const grid = document.getElementById('productsGrid');
@@ -100,6 +160,10 @@ function renderProducts(items) {
         const card = document.createElement('div');
         card.className = "glass-card rounded-2xl p-5 flex flex-col justify-between glass-card-hover border border-slate-800 relative";
         const iconClass = /^fa-[a-z0-9-]+$/i.test(String(prod.icon || '')) ? prod.icon : 'fa-box-open';
+        const imageData = isSafeImageDataURI(prod.imageData) ? prod.imageData : '';
+        const imageMarkup = imageData
+            ? '<img src="' + escapeHtml(imageData) + '" alt="' + escapeHtml(prod.name) + '" loading="lazy" class="h-full w-full object-contain p-2">'
+            : '<i class="fa-solid ' + iconClass + ' transform group-hover:scale-110 transition-transform"></i>';
         const stockKnown = prod.stock !== null && prod.stock !== undefined && Number.isFinite(Number(prod.stock));
         const stock = stockKnown ? Math.max(0, Math.floor(Number(prod.stock))) : null;
         const soldOut = stock === 0;
@@ -110,8 +174,8 @@ function renderProducts(items) {
                     <span class="px-2.5 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-semibold">${escapeHtml(prod.badge || 'Producto')}</span>
                     <span class="text-amber-400 text-xs font-bold flex items-center gap-1"><i class="fa-solid fa-star"></i> ${escapeHtml(prod.rating || '')}</span>
                 </div>
-                <div class="w-full h-36 rounded-xl bg-slate-950/60 flex items-center justify-center my-3 text-cyan-400 text-4xl group">
-                    <i class="fa-solid ${iconClass} transform group-hover:scale-110 transition-transform"></i>
+                <div class="w-full h-40 rounded-xl bg-slate-950/60 flex items-center justify-center my-3 text-cyan-400 text-4xl group overflow-hidden">
+                    ${imageMarkup}
                 </div>
                 <h3 class="text-lg font-bold text-white mb-1">${escapeHtml(prod.name)}</h3>
                 <p class="text-slate-400 text-xs mb-4">${escapeHtml(prod.description || '')}</p>
@@ -134,6 +198,12 @@ function moneyARS(value) {
     return '$' + (Number(value) || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
 }
 
+function isSafeImageDataURI(value) {
+    return typeof value === 'string' &&
+        value.length <= 420000 &&
+        /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/i.test(value);
+}
+
 function applySiteSettings(settings) {
     if (!settings || typeof settings !== 'object') return;
     if (Array.isArray(settings.products)) {
@@ -154,7 +224,8 @@ function applySiteSettings(settings) {
                 rating: String(saved.rating || original.rating || 'Nuevo').slice(0, 12),
                 icon: /^fa-[a-z0-9-]+$/i.test(String(saved.icon || original.icon || '')) ? String(saved.icon || original.icon) : 'fa-box-open',
                 badge: String(saved.badge || original.badge || 'Nuevo').slice(0, 40),
-                description: String(saved.description || original.description || '').slice(0, 400)
+                description: String(saved.description || original.description || '').slice(0, 400),
+                imageData: isSafeImageDataURI(saved.imageData) ? saved.imageData : ''
             };
         });
     }
@@ -167,6 +238,23 @@ function applySiteSettings(settings) {
     if (document.body) {
         document.body.style.background = 'linear-gradient(135deg, ' + start + ' 0%, ' + middle + ' 50%, ' + end + ' 100%)';
     }
+
+    const logoImage = isSafeImageDataURI(settings.logoImage) ? settings.logoImage : '';
+    document.querySelectorAll('[data-site-logo-img]').forEach(function (image) {
+        if (logoImage) {
+            image.src = logoImage;
+            image.classList.remove('hidden');
+        } else {
+            image.removeAttribute('src');
+            image.classList.add('hidden');
+        }
+    });
+    document.querySelectorAll('[data-default-logo]').forEach(function (element) {
+        element.classList.toggle('hidden', Boolean(logoImage));
+    });
+    document.querySelectorAll('[data-default-logo-sparkle]').forEach(function (element) {
+        element.classList.toggle('hidden', Boolean(logoImage));
+    });
 
     const siteName = String(settings.siteName || 'Cleany Clean').trim().slice(0, 80) || 'Cleany Clean';
     document.querySelectorAll('[data-site-name]').forEach(function (element) {
@@ -395,6 +483,8 @@ function toggleCartModal() {
 // Inicialización segura al cargar la ventana
 window.addEventListener('DOMContentLoaded', async () => {
     createBubbles();
+    createBubbleCurtainBubbles();
+    initializeEdgeBubbles();
     renderProducts(catalogData);
     if (window.CleanyOrders) {
         try {

@@ -13,7 +13,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
     <script src="orders-config.js" defer></script>
     <script src="orders-store.js" defer></script>
-    <script src="cleany_clean2.js" defer></script>
+    <script src="cleany_clean2.js?v=20261028-burbujas-imagenes-1" defer></script>
     <script>
         tailwind.config = {
             theme: {
@@ -119,6 +119,110 @@
             50% { opacity: 1; transform: scale(1.1); }
         }
 
+        /* Telón de burbujas que se abre al entrar a la portada */
+        .bubble-curtain {
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            overflow: hidden;
+            pointer-events: none;
+            opacity: 1;
+            visibility: visible;
+        }
+        .bubble-curtain__panel {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 25% 18%, rgba(255,255,255,.16), transparent 28%),
+                linear-gradient(145deg, rgba(4,24,50,.98), rgba(0,96,140,.92) 55%, rgba(8,22,56,.98));
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-color: rgba(125, 240, 255, .42);
+        }
+        .bubble-curtain__panel--left {
+            border-right: 1px solid rgba(165,243,252,.45);
+        }
+        .bubble-curtain__panel--right {
+            border-left: 1px solid rgba(165,243,252,.45);
+        }
+        .curtain-bubble {
+            position: absolute;
+            width: var(--bubble-size, 28px);
+            height: var(--bubble-size, 28px);
+            left: var(--bubble-left, 20%);
+            top: var(--bubble-top, 25%);
+            border: 1px solid rgba(224,251,255,.75);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.82), rgba(103,232,249,.24) 43%, rgba(14,116,144,.05) 75%);
+            box-shadow: inset -3px -4px 10px rgba(34,211,238,.16), 0 0 16px rgba(34,211,238,.18);
+        }
+        .bubble-curtain.is-opening {
+            animation: curtainDisappear 2.15s ease forwards;
+        }
+        .bubble-curtain.is-opening .bubble-curtain__panel--left {
+            animation: curtainOpenLeft 1.65s cubic-bezier(.78,0,.22,1) .08s forwards;
+        }
+        .bubble-curtain.is-opening .bubble-curtain__panel--right {
+            animation: curtainOpenRight 1.65s cubic-bezier(.78,0,.22,1) .08s forwards;
+        }
+        .bubble-curtain.is-opening .curtain-bubble {
+            animation: curtainBubbleFloat 1.7s ease-in-out var(--bubble-delay, 0s) infinite alternate;
+        }
+        @keyframes curtainOpenLeft {
+            to { transform: translateX(-103%); opacity: .65; }
+        }
+        @keyframes curtainOpenRight {
+            to { transform: translateX(103%); opacity: .65; }
+        }
+        @keyframes curtainDisappear {
+            0%, 91% { visibility: visible; opacity: 1; }
+            100% { visibility: hidden; opacity: 0; }
+        }
+        @keyframes curtainBubbleFloat {
+            from { translate: 0 10px; scale: .92; opacity: .65; }
+            to { translate: 0 -14px; scale: 1.08; opacity: 1; }
+        }
+
+        /* Burbujas que brotan desde los laterales cuando se desplaza la página */
+        .edge-bubble-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 25;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .edge-bubble {
+            position: absolute;
+            bottom: auto;
+            border: 1px solid rgba(224,251,255,.8);
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.82), rgba(34,211,238,.2) 45%, rgba(0,114,255,.04) 78%);
+            box-shadow: inset -3px -4px 9px rgba(34,211,238,.16), 0 0 16px rgba(34,211,238,.23);
+            opacity: 0;
+            will-change: transform, opacity;
+        }
+        .edge-bubble--left { left: var(--edge-offset, 4px); --bubble-travel-x: 64px; }
+        .edge-bubble--right { right: var(--edge-offset, 4px); --bubble-travel-x: -64px; }
+        .edge-bubble--up { animation: edgeBubbleUp var(--bubble-duration, 1.2s) ease-out forwards; }
+        .edge-bubble--down { animation: edgeBubbleDown var(--bubble-duration, 1.2s) ease-out forwards; }
+        @keyframes edgeBubbleUp {
+            0% { transform: translate3d(0, 24px, 0) scale(.55); opacity: 0; }
+            22% { opacity: .82; }
+            100% { transform: translate3d(var(--bubble-travel-x), -88px, 0) scale(1.2); opacity: 0; }
+        }
+        @keyframes edgeBubbleDown {
+            0% { transform: translate3d(0, -24px, 0) scale(.55); opacity: 0; }
+            22% { opacity: .82; }
+            100% { transform: translate3d(var(--bubble-travel-x), 88px, 0) scale(1.2); opacity: 0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bubble-curtain { display: none !important; animation: none !important; }
+            .curtain-bubble, .edge-bubble { animation: none !important; }
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
@@ -137,6 +241,15 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between">
 
+    <!-- Telón de burbujas que se abre al entrar a la tienda -->
+    <div id="bubbleCurtain" class="bubble-curtain" aria-hidden="true">
+        <div id="curtainLeft" class="bubble-curtain__panel bubble-curtain__panel--left"></div>
+        <div id="curtainRight" class="bubble-curtain__panel bubble-curtain__panel--right"></div>
+    </div>
+
+    <!-- Burbujas decorativas laterales al subir o bajar por la página -->
+    <div id="edgeBubbleLayer" class="edge-bubble-layer" aria-hidden="true"></div>
+
     <!-- Animación de fondo de burbujas en movimiento -->
     <div class="bubbles" id="bubbleContainer"></div>
 
@@ -150,7 +263,7 @@
                     <div class="relative w-14 h-14 rounded-full p-[2px] bg-gradient-to-r from-pink-500 via-cyan-400 to-amber-400 shadow-lg shadow-cyan-500/30 group-hover:scale-105 transition-transform duration-300">
                         <div class="w-full h-full bg-slate-950 rounded-full flex items-center justify-center relative overflow-hidden">
                             <!-- SVG estilizado de Mantarraya sonriente en el agua -->
-                            <svg class="w-10 h-10 text-cyan-400 transform group-hover:rotate-6 transition-transform" viewBox="0 0 100 100" fill="currentColor">
+                            <svg data-default-logo id="defaultLogoArt" class="w-10 h-10 text-cyan-400 transform group-hover:rotate-6 transition-transform" viewBox="0 0 100 100" fill="currentColor">
                                 <path d="M50 15 C30 15 10 30 5 50 C20 48 35 55 45 65 C48 68 50 85 50 95 C50 85 52 68 55 65 C65 55 80 48 95 50 C90 30 70 15 50 15 Z" fill="url(#stingrayGrad)" />
                                 <circle cx="38" cy="38" r="4" fill="#ffffff" />
                                 <circle cx="62" cy="38" r="4" fill="#ffffff" />
@@ -164,8 +277,9 @@
                                     </linearGradient>
                                 </defs>
                             </svg>
-                            <!-- Destellos dorados alrededor -->
-                            <i class="fa-solid fa-sparkles text-amber-300 text-xs absolute top-1 right-2 sparkle"></i>
+                            <img data-site-logo-img alt="Logo de la tienda" class="hidden absolute inset-0 z-10 h-full w-full object-contain p-1">
+                            <!-- Destellos dorados alrededor del logo predeterminado -->
+                            <i data-default-logo-sparkle class="fa-solid fa-sparkles text-amber-300 text-xs absolute top-1 right-2 sparkle"></i>
                         </div>
                     </div>
                     <div>
@@ -548,7 +662,8 @@
                 <!-- Col 1 -->
                 <div class="space-y-4">
                     <div class="flex items-center gap-2">
-                        <i class="fa-solid fa-droplet text-cyan-400 text-2xl"></i>
+                        <img data-site-logo-img alt="Logo de la tienda" class="hidden h-8 w-8 object-contain">
+                        <i data-default-logo class="fa-solid fa-droplet text-cyan-400 text-2xl"></i>
                         <span data-site-name class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 to-amber-300">Cleany Clean</span>
                     </div>
                     <p class="text-xs text-slate-400">Soluciones integrales de limpieza, desinfección y productos de máxima calidad acuática.</p>
