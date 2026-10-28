@@ -194,7 +194,15 @@ function renderProducts(items) {
 }
 
 function moneyARS(value) {
-    return '
+    return '$' + (Number(value) || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+}
+
+function isSafeImageDataURI(value) {
+    return typeof value === 'string' &&
+        value.length <= 420000 &&
+        /^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/i.test(value);
+}
+
 function applySiteSettings(settings) {
     if (!settings || typeof settings !== 'object') return;
     if (Array.isArray(settings.products)) {
@@ -760,6 +768,8 @@ function toggleCartModal() {
 // Inicialización segura al cargar la ventana
 window.addEventListener('DOMContentLoaded', async () => {
     createBubbles();
+    createBubbleCurtainBubbles();
+    initializeEdgeBubbles();
     renderProducts(catalogData);
     if (window.CleanyOrders) {
         try {
