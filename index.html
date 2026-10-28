@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="orders-config.js" defer></script>
+    <script src="orders-store.js" defer></script>
     <script src="cleany_clean2.js" defer></script>
     <script>
         tailwind.config = {
@@ -599,7 +602,9 @@
             </div>
 
             <h3 class="text-2xl font-extrabold text-white mb-2">¡Pedido Confirmado!</h3>
-            <p class="text-slate-300 text-sm mb-6">Gracias por confiar en <span class="text-cyan-300 font-bold">Cleany Clean</span>. Hemos enviado el comprobante a tu correo.</p>
+            <p class="text-slate-300 text-sm mb-6">Gracias por confiar en <span class="text-cyan-300 font-bold">Cleany Clean</span>. Tu pedido quedó registrado.</p>
+
+            <p id="orderSyncStatus" class="mb-4 text-xs text-cyan-200" role="status">Registrando el pedido...</p>
 
             <!-- Resumen Ticket -->
             <div id="ticketDetails" class="bg-slate-950/80 rounded-xl p-4 text-left text-xs space-y-2 mb-6 border border-slate-800 text-slate-300">
