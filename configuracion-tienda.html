@@ -236,9 +236,6 @@
       $('loginNotice').textContent = cloud
         ? 'Modo central activo: el catálogo y los colores se guardan para todos los visitantes. Las escrituras requieren el rol admin.'
         : 'Modo local: el acceso es una barrera visual y los cambios solo se comparten en el mismo navegador y origen. Configurá Supabase para aplicarlos a todos los visitantes.';
-      if (cloud) {
-        try { await window.CleanyOrders.signOutAdmin(); } catch (_) {}
-      }
     }
 
     $('loginForm').addEventListener('submit', async event => {
