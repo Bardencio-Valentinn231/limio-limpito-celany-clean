@@ -235,7 +235,7 @@ function escapeHtml(value) {
 }
 
 // Manejar el submit del Formulario y guardar el pedido en este navegador.
-function handleFormSubmit(event) {
+async function handleFormSubmit(event) {
     event.preventDefault();
 
     if (cart.length === 0) {
@@ -285,6 +285,19 @@ function handleFormSubmit(event) {
         return;
     }
 
+    let syncMessage = 'Pedido guardado en este navegador. La sincronización central todavía no está configurada.';
+    if (window.CleanyOrders && window.CleanyOrders.isCloudConfigured()) {
+        const syncResult = await window.CleanyOrders.syncOrder(order);
+        syncMessage = syncResult.synced
+            ? 'Compra sincronizada con el gestor central.'
+            : 'El pedido quedó en este navegador, pero no pudo sincronizarse con el gestor central. Se volverá a intentar al cargar la tienda.';
+        if (!syncResult.synced) {
+            console.error('Falló la sincronización del pedido:', syncResult.error);
+        }
+    }
+    const syncStatus = document.getElementById('orderSyncStatus');
+    if (syncStatus) syncStatus.textContent = syncMessage;
+
     const ticketContainer = document.getElementById('ticketDetails');
     if (ticketContainer) {
         ticketContainer.innerHTML = `
@@ -329,4 +342,9 @@ function toggleCartModal() {
 window.addEventListener('DOMContentLoaded', () => {
     createBubbles();
     renderProducts(catalogData);
+    if (window.CleanyOrders && window.CleanyOrders.isCloudConfigured()) {
+        window.CleanyOrders.syncPendingOrders().catch(error => {
+            console.error('No se pudieron reintentar los pedidos pendientes:', error);
+        });
+    }
 });
