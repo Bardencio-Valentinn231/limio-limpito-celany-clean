@@ -128,7 +128,8 @@
             grid-template-columns: 1fr 1fr;
             overflow: hidden;
             pointer-events: none;
-            animation: curtainDisappear 2.15s ease forwards;
+            opacity: 1;
+            visibility: visible;
         }
         .bubble-curtain__panel {
             position: relative;
@@ -142,11 +143,9 @@
         }
         .bubble-curtain__panel--left {
             border-right: 1px solid rgba(165,243,252,.45);
-            animation: curtainOpenLeft 1.65s cubic-bezier(.78,0,.22,1) .08s forwards;
         }
         .bubble-curtain__panel--right {
             border-left: 1px solid rgba(165,243,252,.45);
-            animation: curtainOpenRight 1.65s cubic-bezier(.78,0,.22,1) .08s forwards;
         }
         .curtain-bubble {
             position: absolute;
@@ -158,6 +157,17 @@
             border-radius: 50%;
             background: radial-gradient(circle at 30% 25%, rgba(255,255,255,.82), rgba(103,232,249,.24) 43%, rgba(14,116,144,.05) 75%);
             box-shadow: inset -3px -4px 10px rgba(34,211,238,.16), 0 0 16px rgba(34,211,238,.18);
+        }
+        .bubble-curtain.is-opening {
+            animation: curtainDisappear 2.15s ease forwards;
+        }
+        .bubble-curtain.is-opening .bubble-curtain__panel--left {
+            animation: curtainOpenLeft 1.65s cubic-bezier(.78,0,.22,1) .08s forwards;
+        }
+        .bubble-curtain.is-opening .bubble-curtain__panel--right {
+            animation: curtainOpenRight 1.65s cubic-bezier(.78,0,.22,1) .08s forwards;
+        }
+        .bubble-curtain.is-opening .curtain-bubble {
             animation: curtainBubbleFloat 1.7s ease-in-out var(--bubble-delay, 0s) infinite alternate;
         }
         @keyframes curtainOpenLeft {
