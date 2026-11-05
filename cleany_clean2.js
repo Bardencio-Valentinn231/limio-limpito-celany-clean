@@ -185,13 +185,14 @@ function renderProducts(items) {
             <div>
                 <div class="mb-4 space-y-2">
                     <div class="flex items-center justify-between gap-3">
-                        <span class="text-xs text-slate-400">Precio al contado</span>
+                        <span class="text-xs text-slate-400">Base al contado</span>
                         <span class="text-lg font-extrabold text-cyan-300">${moneyARS(cashPrice)}</span>
                     </div>
                     <div class="flex items-center justify-between gap-3 border-t border-slate-700/60 pt-2">
-                        <span class="text-xs text-slate-400">Precio en cuenta corriente</span>
+                        <span class="text-xs text-slate-400">Base cuenta corriente</span>
                         <span class="text-base font-bold text-cyan-300">${moneyARS(accountPrice)}</span>
                     </div>
+                    <p class="mt-2 text-[11px] text-slate-500">Al finalizar se aplica el recargo según el medio de pago e IVA del 21% incluido.</p>
                 </div>
                 ${stockText}
                 <button type="button" onclick="addToCart(${Number(prod.id)})" ${soldOut ? 'disabled' : ''} class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-cyan-300 font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-40">
@@ -206,16 +207,143 @@ function moneyARS(value) {
     return '$' + (Number(value) || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
 }
 
+const ACCOUNT_PAYMENT_METHODS = ['Cuenta Corriente', 'Cheque', 'Cheque diferido', 'Pagaré'];
+const SIGNATURE_PAYMENT_METHODS = ['Cheque', 'Cheque diferido', 'Pagaré'];
+const IVA_RATE = 0.21;
+
+function currentPaymentMethod() {
+    const selected = document.querySelector('input[name="formaPago"]:checked');
+    return selected ? selected.value : 'Tarjeta de Crédito/Débito';
+}
+
 function selectedPriceCategory() {
-    const payment = document.querySelector('input[name="formaPago"]:checked');
-    return payment && payment.value === 'Cuenta Corriente' ? 'cuentaCorriente' : 'contado';
+    return ACCOUNT_PAYMENT_METHODS.includes(currentPaymentMethod()) ? 'cuentaCorriente' : 'contado';
+}
+
+function roundCurrency(value) {
+    return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
+
+function getPaymentPriceDetails(item, priceCategory) {
+    const cashPrice = Number(item.priceCash ?? item.price) || 0;
+    const rawAccountPrice = Number(item.priceAccount ?? cashPrice);
+    const accountPrice = Number.isFinite(rawAccountPrice) && rawAccountPrice >= 0 ? rawAccountPrice : cashPrice;
+    const isAccount = priceCategory === 'cuentaCorriente';
+    const basePrice = isAccount ? accountPrice : cashPrice;
+    const surchargeRate = isAccount ? 0.35 : 0.25;
+    const taxableBase = roundCurrency(basePrice * (1 + surchargeRate));
+    const ivaIncludedAmount = roundCurrency(taxableBase * IVA_RATE);
+    const total = roundCurrency(taxableBase + ivaIncludedAmount);
+    return {
+        basePrice: roundCurrency(basePrice),
+        priceCategory: isAccount ? 'Cuenta corriente' : 'Al contado',
+        surchargeRate: surchargeRate,
+        surchargeAmount: roundCurrency(taxableBase - basePrice),
+        taxableBase: taxableBase,
+        ivaRate: 21,
+        ivaIncludedAmount: ivaIncludedAmount,
+        total: total
+    };
 }
 
 function priceForPayment(item, priceCategory) {
-    const cashPrice = Number(item.priceCash ?? item.price) || 0;
-    const accountValue = Number(item.priceAccount ?? cashPrice);
-    const accountPrice = Number.isFinite(accountValue) && accountValue >= 0 ? accountValue : cashPrice;
-    return priceCategory === 'cuentaCorriente' ? accountPrice : cashPrice;
+    return getPaymentPriceDetails(item, priceCategory).total;
+}
+
+let paymentSignatureHasInk = false;
+let activeSignatureMethod = '';
+
+function clearPaymentSignature() {
+    const canvas = document.getElementById('paymentSignatureCanvas');
+    if (canvas) {
+        const context = canvas.getContext('2d');
+        if (context) context.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    paymentSignatureHasInk = false;
+}
+
+function initializePaymentSignaturePad() {
+    const canvas = document.getElementById('paymentSignatureCanvas');
+    if (!canvas || canvas.dataset.initialized === 'true') return;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    canvas.dataset.initialized = 'true';
+    context.strokeStyle = '#173c35';
+    context.lineWidth = 4.5;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    let drawing = false;
+
+    const point = event => {
+        const rect = canvas.getBoundingClientRect();
+        return {
+            x: (event.clientX - rect.left) * (canvas.width / rect.width),
+            y: (event.clientY - rect.top) * (canvas.height / rect.height)
+        };
+    };
+
+    canvas.addEventListener('pointerdown', event => {
+        event.preventDefault();
+        drawing = true;
+        if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId);
+        const p = point(event);
+        context.beginPath();
+        context.moveTo(p.x, p.y);
+        context.lineTo(p.x + 0.1, p.y + 0.1);
+        context.stroke();
+        paymentSignatureHasInk = true;
+    });
+
+    canvas.addEventListener('pointermove', event => {
+        if (!drawing) return;
+        event.preventDefault();
+        const p = point(event);
+        context.lineTo(p.x, p.y);
+        context.stroke();
+    });
+
+    const stopDrawing = () => {
+        drawing = false;
+        context.beginPath();
+    };
+    canvas.addEventListener('pointerup', stopDrawing);
+    canvas.addEventListener('pointercancel', stopDrawing);
+    canvas.addEventListener('lostpointercapture', stopDrawing);
+
+    const clearButton = document.getElementById('clearPaymentSignature');
+    if (clearButton) clearButton.addEventListener('click', () => {
+        clearPaymentSignature();
+    });
+}
+
+function updatePaymentMethodUI() {
+    const method = currentPaymentMethod();
+    const isAccount = selectedPriceCategory() === 'cuentaCorriente';
+    const needsSignature = SIGNATURE_PAYMENT_METHODS.includes(method);
+    const panel = document.getElementById('paymentSignaturePanel');
+    const nameInput = document.getElementById('paymentSignerName');
+    const title = document.getElementById('paymentSignatureTitle');
+    const description = document.getElementById('paymentSignatureDescription');
+    const info = document.getElementById('paymentPriceInfo');
+
+    if (activeSignatureMethod !== method) {
+        clearPaymentSignature();
+        if (nameInput) nameInput.value = '';
+        activeSignatureMethod = method;
+    }
+
+    if (panel) panel.classList.toggle('hidden', !needsSignature);
+    if (nameInput) nameInput.required = needsSignature;
+    if (title) title.textContent = 'Firma para ' + method;
+    if (description) description.textContent = 'Firmá en el recuadro para adjuntar tu conformidad al pedido mediante ' + method.toLowerCase() + '.';
+
+    if (info) {
+        info.textContent = (isAccount
+            ? 'Cuenta corriente: recargo del 35%. '
+            : 'Contado y transferencia: recargo del 25%. ') +
+            'El importe también incluye IVA del 21%; el total mostrado ya contempla ambos conceptos.';
+    }
+    updateCartUI();
 }
 
 function isSafeImageDataURI(value) {
@@ -373,7 +501,8 @@ function updateCartUI() {
         listContainer.innerHTML = '';
         const priceCategory = selectedPriceCategory();
         cart.forEach(item => {
-            const unitPrice = priceForPayment(item, priceCategory);
+            const priceDetails = getPaymentPriceDetails(item, priceCategory);
+            const unitPrice = priceDetails.total;
             item.price = unitPrice;
             const row = document.createElement('div');
             row.className = "flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-700/50";
@@ -384,7 +513,7 @@ function updateCartUI() {
                     </div>
                     <div>
                         <h4 class="text-sm font-semibold text-white">${item.name}</h4>
-                        <span class="text-xs text-cyan-300">${moneyARS(unitPrice)} c/u · ${priceCategory === 'cuentaCorriente' ? 'Cuenta corriente' : 'Contado'}</span>
+                        <span class="text-xs text-cyan-300">${moneyARS(unitPrice)} c/u · +${Math.round(priceDetails.surchargeRate * 100)}% · IVA 21% incluido</span>
                     </div>
                 </div>
 
@@ -398,7 +527,7 @@ function updateCartUI() {
         });
     }
 
-    const total = cart.reduce((acc, item) => acc + (priceForPayment(item, selectedPriceCategory()) * item.quantity), 0);
+    const total = cart.reduce((acc, item) => acc + (getPaymentPriceDetails(item, selectedPriceCategory()).total * item.quantity), 0);
     const subtotalEl = document.getElementById('subtotalPrice');
     const totalEl = document.getElementById('totalPrice');
     
@@ -424,23 +553,53 @@ async function handleFormSubmit(event) {
 
     const getValue = id => document.getElementById(id)?.value?.trim() || '';
     const formaPagoEl = document.querySelector('input[name="formaPago"]:checked');
+    const paymentMethod = formaPagoEl ? formaPagoEl.value : 'No especificado';
     const priceCategory = selectedPriceCategory();
+    const needsSignature = SIGNATURE_PAYMENT_METHODS.includes(paymentMethod);
+    const signerName = document.getElementById('paymentSignerName')?.value.trim() || '';
+    const signatureCanvas = document.getElementById('paymentSignatureCanvas');
+    if (needsSignature && !signerName) {
+        alert('Ingresá el nombre y apellido de quien firma.');
+        document.getElementById('paymentSignerName')?.focus();
+        return;
+    }
+    if (needsSignature && !paymentSignatureHasInk) {
+        alert('Dibujá la firma en el panel antes de confirmar el pedido.');
+        document.getElementById('paymentSignatureCanvas')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+
     const orderItems = cart.map(item => {
         const priceCash = Number(item.priceCash ?? item.price) || 0;
         const priceAccount = Number(item.priceAccount ?? priceCash) || 0;
-        const selectedPrice = priceForPayment(item, priceCategory);
+        const details = getPaymentPriceDetails(item, priceCategory);
         return {
             id: item.id,
             name: item.name,
             category: item.category,
-            price: selectedPrice,
+            price: details.total,
             priceCash: priceCash,
             priceAccount: priceAccount,
-            priceCategory: priceCategory === 'cuentaCorriente' ? 'Cuenta corriente' : 'Al contado',
+            basePrice: details.basePrice,
+            priceCategory: details.priceCategory,
+            surchargeRate: details.surchargeRate,
+            surchargeAmount: details.surchargeAmount,
+            taxableBase: details.taxableBase,
+            ivaRate: details.ivaRate,
+            ivaIncludedAmount: details.ivaIncludedAmount,
             quantity: Number(item.quantity)
         };
     });
     const total = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const netSubtotal = orderItems.reduce((acc, item) => acc + (item.taxableBase * item.quantity), 0);
+    const ivaIncludedTotal = orderItems.reduce((acc, item) => acc + (item.ivaIncludedAmount * item.quantity), 0);
+    const surchargeTotal = orderItems.reduce((acc, item) => acc + (item.surchargeAmount * item.quantity), 0);
+    const paymentSignature = needsSignature ? {
+        method: paymentMethod,
+        signerName: signerName,
+        imageData: signatureCanvas.toDataURL('image/png'),
+        signedAt: new Date().toISOString()
+    } : null;
     const order = {
         id: `CC-${Date.now().toString(36).toUpperCase()}`,
         createdAt: new Date().toISOString(),
@@ -457,11 +616,18 @@ async function handleFormSubmit(event) {
             provincia: getValue('provincia'),
             cp: getValue('cp')
         },
-        formaPago: formaPagoEl ? formaPagoEl.value : "No especificado",
+        formaPago: paymentMethod,
         priceCategory: priceCategory === 'cuentaCorriente' ? 'Cuenta corriente' : 'Al contado',
+        surchargeRate: priceCategory === 'cuentaCorriente' ? 35 : 25,
+        surchargeTotal: roundCurrency(surchargeTotal),
+        netSubtotal: roundCurrency(netSubtotal),
+        ivaRate: 21,
+        ivaIncludedTotal: roundCurrency(ivaIncludedTotal),
+        ivaIncluded: true,
+        paymentSignature: paymentSignature,
         items: orderItems,
         subtotal: total,
-        total: total,
+        total: roundCurrency(total),
         currency: 'ARS',
         status: 'Recibido'
     };
@@ -502,7 +668,9 @@ async function handleFormSubmit(event) {
             <p><strong>Dirección:</strong> ${escapeHtml(order.customer.direccion)} ${escapeHtml(order.customer.piso)}, ${escapeHtml(order.customer.ciudad)}, ${escapeHtml(order.customer.provincia)} (${escapeHtml(order.customer.cp)})</p>
             <p><strong>Condición IVA:</strong> ${escapeHtml(order.customer.iva)}</p>
             <p><strong>Método de Pago:</strong> ${escapeHtml(order.formaPago)}</p>
-            <p><strong>Lista de precios:</strong> ${escapeHtml(order.priceCategory)}</p>
+            <p><strong>Lista de precios:</strong> ${escapeHtml(order.priceCategory)} · Recargo ${order.surchargeRate}%</p>
+            <p><strong>IVA:</strong> 21% incluido en los precios</p>
+            ${order.paymentSignature ? '<p><strong>Firma de ' + escapeHtml(order.paymentSignature.signerName) + ':</strong> adjunta al pedido.</p>' : ''}
             <div class="border-t border-slate-700 pt-2 mt-2">
                 <p><strong>Total del pedido:</strong> <span class="text-cyan-300 font-bold text-sm">$ ${order.total.toLocaleString('es-AR')}</span></p>
             </div>
@@ -517,6 +685,9 @@ async function handleFormSubmit(event) {
 
     const form = document.getElementById('checkoutForm');
     if (form) form.reset();
+    clearPaymentSignature();
+    activeSignatureMethod = currentPaymentMethod();
+    updatePaymentMethodUI();
 }
 
 function closeModal() {
@@ -537,10 +708,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     createBubbles();
     createBubbleCurtainBubbles();
     initializeEdgeBubbles();
+    initializePaymentSignaturePad();
     document.querySelectorAll('input[name="formaPago"]').forEach(function (input) {
-        input.addEventListener('change', updateCartUI);
+        input.addEventListener('change', updatePaymentMethodUI);
     });
     renderProducts(catalogData);
+    updatePaymentMethodUI();
     if (window.CleanyOrders) {
         try {
             const settings = await window.CleanyOrders.getSiteSettings();
