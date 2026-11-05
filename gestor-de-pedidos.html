@@ -222,7 +222,9 @@
         const customer = o.customer || {};
         const items = Array.isArray(o.items) ? o.items : [];
         const count = items.reduce((sum,item)=>sum+(Number(item.quantity)||0),0);
-        return '<tr class="border-t border-slate-800 align-top"><td class="p-3"><strong>'+esc(o.id)+'</strong><br><span class="text-xs text-slate-400">'+esc(formatDate(o.createdAt))+'</span></td><td class="p-3">'+esc(customer.nombre)+'<br><span class="text-xs text-slate-400">DNI: '+esc(customer.dni)+' · CUIT: '+esc(customer.cuit)+'</span></td><td class="p-3">'+esc(customer.email)+'<br>'+esc(customer.telefono)+'</td><td class="p-3">'+count+' ítem(s)<br><span class="text-xs text-slate-400">'+esc(items.map(i=>i.name+' × '+i.quantity).join(', '))+'</span></td><td class="p-3 font-bold">'+money(o.total)+'</td><td class="p-3">'+esc(o.formaPago)+'</td><td class="p-3"><div class="flex gap-1"><button data-invoice="A" data-order="'+esc(o.id)+'" class="rounded bg-cyan-700 px-2 py-1 text-xs font-bold text-white">A</button><button data-invoice="B" data-order="'+esc(o.id)+'" class="rounded bg-blue-700 px-2 py-1 text-xs font-bold text-white">B</button></div></td></tr>';
+        const paymentMeta = (o.priceCategory ? '<br><span class="text-xs text-slate-400">' + esc(o.priceCategory) + ' · recargo ' + esc(o.surchargeRate || (o.priceCategory === 'Cuenta corriente' ? 35 : 25)) + '% · IVA 21% incluido</span>' : '');
+        const signatureMeta = o.paymentSignature ? '<br><span class="text-xs font-semibold text-emerald-300"><i class="fa-solid fa-signature mr-1"></i>Firma adjunta: ' + esc(o.paymentSignature.signerName || 'Firmante') + '</span>' : '';
+        return '<tr class="border-t border-slate-800 align-top"><td class="p-3"><strong>'+esc(o.id)+'</strong><br><span class="text-xs text-slate-400">'+esc(formatDate(o.createdAt))+'</span></td><td class="p-3">'+esc(customer.nombre)+'<br><span class="text-xs text-slate-400">DNI: '+esc(customer.dni)+' · CUIT: '+esc(customer.cuit)+'</span></td><td class="p-3">'+esc(customer.email)+'<br>'+esc(customer.telefono)+'</td><td class="p-3">'+count+' ítem(s)<br><span class="text-xs text-slate-400">'+esc(items.map(i=>i.name+' × '+i.quantity).join(', '))+'</span></td><td class="p-3 font-bold">'+money(o.total)+'</td><td class="p-3">'+esc(o.formaPago)+paymentMeta+signatureMeta+'</td><td class="p-3"><div class="flex gap-1"><button data-invoice="A" data-order="'+esc(o.id)+'" class="rounded bg-cyan-700 px-2 py-1 text-xs font-bold text-white">A</button><button data-invoice="B" data-order="'+esc(o.id)+'" class="rounded bg-blue-700 px-2 py-1 text-xs font-bold text-white">B</button></div></td></tr>';
       }).join('');
       $('ordersRows').querySelectorAll('button[data-order]').forEach(button => button.addEventListener('click', () => {
         selectedOrder = allOrders.find(o => o.id === button.dataset.order) || null;
@@ -239,6 +241,10 @@
       const o = selectedOrder, c = o.customer || {}, items = Array.isArray(o.items) ? o.items : [];
       const type = $('invoiceType').value;
       const subtotal = Number(o.subtotal ?? o.total) || 0;
+      const hasTaxBreakdown = o.netSubtotal !== undefined && o.ivaIncludedTotal !== undefined;
+      const signature = o.paymentSignature && typeof o.paymentSignature.imageData === 'string' &&
+        /^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/i.test(o.paymentSignature.imageData)
+        ? o.paymentSignature : null;
       $('invoiceContent').innerHTML = `
         <div class="flex items-start justify-between gap-4 border-b-2 border-slate-800 pb-5">
           <div><h2 class="text-2xl font-extrabold">Cleany Clean</h2><p class="mt-1 text-sm">Productos y servicios de limpieza</p><p class="mt-2 text-xs text-slate-600">Datos fiscales del emisor: completar antes de uso real</p></div>
@@ -249,11 +255,21 @@
           <div><p class="text-xs uppercase text-slate-500">Cliente</p><p class="mt-1 font-bold">${esc(c.nombre)}</p><p class="text-sm">DNI: ${esc(c.dni)} · CUIT/CUIL: ${esc(c.cuit)}</p><p class="text-sm">IVA: ${esc(c.iva)}</p></div>
           <div><p class="text-xs uppercase text-slate-500">Contacto y domicilio</p><p class="mt-1 text-sm">${esc(c.email)} · ${esc(c.telefono)}</p><p class="text-sm">${esc(c.direccion)} ${esc(c.piso)}</p><p class="text-sm">${esc(c.ciudad)}, ${esc(c.provincia)} · CP ${esc(c.cp)}</p></div>
         </div>
-        <div class="mt-5 overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>Cant.</th><th>Descripción</th><th>Precio unitario</th><th>Importe</th></tr></thead><tbody>
+        <div class="mt-5 overflow-x-auto"><table class="w-full text-sm"><thead><tr><th>Cant.</th><th>Descripción</th><th>Precio unitario final</th><th>Importe</th></tr></thead><tbody>
         ${items.map(item=>'<tr><td>'+esc(item.quantity)+'</td><td>'+esc(item.name)+'</td><td>'+money(item.price)+'</td><td>'+money((Number(item.price)||0)*(Number(item.quantity)||0))+'</td></tr>').join('')}
         </tbody></table></div>
-        <div class="ml-auto mt-6 max-w-xs space-y-2 text-sm"><div class="flex justify-between"><span>Subtotal</span><strong>${money(subtotal)}</strong></div><div class="flex justify-between border-t-2 border-slate-800 pt-3 text-lg"><span>TOTAL</span><strong>${money(o.total)}</strong></div></div>
-        <div class="mt-8 border-t border-slate-300 pt-4 text-xs text-slate-500"><p>Forma de pago: ${esc(o.formaPago)}</p><p>Lista de precios aplicada: ${esc(o.priceCategory || (o.formaPago === 'Cuenta Corriente' ? 'Cuenta corriente' : 'Al contado'))}</p><p class="mt-2 font-bold">VISTA PREVIA NO FISCAL — NO ES UN COMPROBANTE AUTORIZADO</p><p>Sin CAE/CAEA ni numeración fiscal oficial.</p></div>`;
+        <div class="ml-auto mt-6 max-w-xs space-y-2 text-sm">
+          ${hasTaxBreakdown ? '<div class="flex justify-between"><span>Neto con recargo</span><strong>'+money(o.netSubtotal)+'</strong></div><div class="flex justify-between"><span>IVA 21% incluido</span><strong>'+money(o.ivaIncludedTotal)+'</strong></div>' : '<div class="flex justify-between"><span>Subtotal</span><strong>'+money(subtotal)+'</strong></div>'}
+          <div class="flex justify-between border-t-2 border-slate-800 pt-3 text-lg"><span>TOTAL ${o.ivaIncluded ? '(IVA incluido)' : ''}</span><strong>${money(o.total)}</strong></div>
+        </div>
+        <div class="mt-8 border-t border-slate-300 pt-4 text-xs text-slate-500">
+          <p>Forma de pago: ${esc(o.formaPago)}</p>
+          <p>Lista de precios aplicada: ${esc(o.priceCategory || (o.formaPago === 'Cuenta Corriente' ? 'Cuenta corriente' : 'Al contado'))}</p>
+          <p>Recargo aplicado: +${esc(o.surchargeRate || (o.priceCategory === 'Cuenta corriente' ? 35 : 25))}% · IVA: 21% ${o.ivaIncluded ? 'incluido' : ''}</p>
+          ${signature ? '<div class="mt-5 max-w-sm rounded-lg border border-slate-300 p-3"><p class="font-bold text-slate-700">Firma registrada: '+esc(signature.signerName || 'Firmante')+'</p><img src="'+esc(signature.imageData)+'" alt="Firma manuscrita adjunta al pedido" class="mt-2 max-h-28 max-w-full object-contain"><p class="mt-2 text-[10px] text-slate-500">Medio: '+esc(signature.method || o.formaPago)+' · '+esc(formatDate(signature.signedAt))+'</p></div>' : ''}
+          <p class="mt-4 font-bold">VISTA PREVIA NO FISCAL — NO ES UN COMPROBANTE AUTORIZADO</p>
+          <p>Sin CAE/CAEA ni numeración fiscal oficial. La firma incorporada es una constancia manuscrita capturada por este sitio y no equivale por sí sola a una firma digital certificada.</p>
+        </div>`;
     }
   </script>
 </body>
