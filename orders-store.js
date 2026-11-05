@@ -55,10 +55,23 @@
   }
 
   function toCloudRow(order) {
+    /* Los detalles ampliados viajan dentro de customer (JSONB existente),
+       así no hace falta agregar columnas a las instalaciones actuales. */
+    var customerData = Object.assign({}, order.customer || {});
+    customerData._cleanyPaymentMetadata = {
+      paymentSignature: order.paymentSignature || null,
+      priceCategory: order.priceCategory || null,
+      surchargeRate: Number(order.surchargeRate) || 0,
+      surchargeTotal: Number(order.surchargeTotal) || 0,
+      netSubtotal: Number(order.netSubtotal) || 0,
+      ivaRate: Number(order.ivaRate) || 21,
+      ivaIncludedTotal: Number(order.ivaIncludedTotal) || 0,
+      ivaIncluded: order.ivaIncluded !== false
+    };
     return {
       id: String(order.id),
       created_at: order.createdAt || new Date().toISOString(),
-      customer: order.customer || {},
+      customer: customerData,
       forma_pago: order.formaPago || 'No especificado',
       items: Array.isArray(order.items) ? order.items : [],
       subtotal: Number(order.subtotal) || 0,
@@ -69,12 +82,24 @@
   }
 
   function fromCloudRow(row) {
+    var storedCustomer = row.customer || {};
+    var metadata = storedCustomer._cleanyPaymentMetadata || {};
+    var customerData = Object.assign({}, storedCustomer);
+    delete customerData._cleanyPaymentMetadata;
     return {
-      id: row.id, createdAt: row.created_at, customer: row.customer || {},
+      id: row.id, createdAt: row.created_at, customer: customerData,
       formaPago: row.forma_pago || 'No especificado',
       items: Array.isArray(row.items) ? row.items : [],
       subtotal: Number(row.subtotal) || 0, total: Number(row.total) || 0,
       currency: row.currency || 'ARS', status: row.status || 'Recibido',
+      paymentSignature: metadata.paymentSignature || null,
+      priceCategory: metadata.priceCategory || null,
+      surchargeRate: Number(metadata.surchargeRate) || 0,
+      surchargeTotal: Number(metadata.surchargeTotal) || 0,
+      netSubtotal: Number(metadata.netSubtotal) || 0,
+      ivaRate: Number(metadata.ivaRate) || 21,
+      ivaIncludedTotal: Number(metadata.ivaIncludedTotal) || 0,
+      ivaIncluded: metadata.ivaIncluded !== false,
       cloudSynced: true
     };
   }
