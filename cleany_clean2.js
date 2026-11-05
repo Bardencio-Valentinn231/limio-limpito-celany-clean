@@ -231,14 +231,16 @@ function getPaymentPriceDetails(item, priceCategory) {
     const isAccount = priceCategory === 'cuentaCorriente';
     const basePrice = isAccount ? accountPrice : cashPrice;
     const surchargeRate = isAccount ? 0.35 : 0.25;
-    const taxableBase = roundCurrency(basePrice * (1 + surchargeRate));
-    const ivaIncludedAmount = roundCurrency(taxableBase * IVA_RATE);
-    const total = roundCurrency(taxableBase + ivaIncludedAmount);
+    const surchargeAmount = roundCurrency(basePrice * surchargeRate);
+    /* El IVA está integrado dentro del total ajustado: se desglosa como 21/121. */
+    const total = roundCurrency(basePrice + surchargeAmount);
+    const ivaIncludedAmount = roundCurrency(total * (IVA_RATE / (1 + IVA_RATE)));
+    const taxableBase = roundCurrency(total - ivaIncludedAmount);
     return {
         basePrice: roundCurrency(basePrice),
         priceCategory: isAccount ? 'Cuenta corriente' : 'Al contado',
         surchargeRate: surchargeRate,
-        surchargeAmount: roundCurrency(taxableBase - basePrice),
+        surchargeAmount: surchargeAmount,
         taxableBase: taxableBase,
         ivaRate: 21,
         ivaIncludedAmount: ivaIncludedAmount,
@@ -341,7 +343,7 @@ function updatePaymentMethodUI() {
         info.textContent = (isAccount
             ? 'Cuenta corriente: recargo del 35%. '
             : 'Contado y transferencia: recargo del 25%. ') +
-            'El importe también incluye IVA del 21%; el total mostrado ya contempla ambos conceptos.';
+            'El IVA del 21% está integrado dentro del precio final; no se suma por segunda vez.';
     }
     updateCartUI();
 }
