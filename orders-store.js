@@ -55,19 +55,24 @@
   }
 
   function toCloudRow(order) {
-    /* Los detalles ampliados viajan dentro de customer (JSONB existente),
-       así no hace falta agregar columnas a las instalaciones actuales. */
     var customerData = Object.assign({}, order.customer || {});
-    customerData._cleanyPaymentMetadata = {
-      paymentSignature: order.paymentSignature || null,
-      priceCategory: order.priceCategory || null,
-      surchargeRate: Number(order.surchargeRate) || 0,
-      surchargeTotal: Number(order.surchargeTotal) || 0,
-      netSubtotal: Number(order.netSubtotal) || 0,
-      ivaRate: Number(order.ivaRate) || 21,
-      ivaIncludedTotal: Number(order.ivaIncludedTotal) || 0,
-      ivaIncluded: order.ivaIncluded !== false
-    };
+    var hasPaymentMetadata = Boolean(order.paymentSignature) ||
+      order.netSubtotal !== undefined || order.ivaIncludedTotal !== undefined ||
+      order.surchargeRate !== undefined || order.priceCategory !== undefined;
+    if (hasPaymentMetadata) {
+      /* Guarda los datos ampliados dentro de customer (JSONB existente):
+         no hace falta agregar columnas a las instalaciones Supabase actuales. */
+      customerData._cleanyPaymentMetadata = {
+        paymentSignature: order.paymentSignature || null,
+        priceCategory: order.priceCategory || null,
+        surchargeRate: Number(order.surchargeRate) || 0,
+        surchargeTotal: Number(order.surchargeTotal) || 0,
+        netSubtotal: order.netSubtotal === undefined ? null : Number(order.netSubtotal) || 0,
+        ivaRate: Number(order.ivaRate) || 21,
+        ivaIncludedTotal: order.ivaIncludedTotal === undefined ? null : Number(order.ivaIncludedTotal) || 0,
+        ivaIncluded: order.ivaIncluded === true
+      };
+    }
     return {
       id: String(order.id),
       created_at: order.createdAt || new Date().toISOString(),
@@ -83,25 +88,32 @@
 
   function fromCloudRow(row) {
     var storedCustomer = row.customer || {};
-    var metadata = storedCustomer._cleanyPaymentMetadata || {};
+    var metadata = storedCustomer._cleanyPaymentMetadata || null;
     var customerData = Object.assign({}, storedCustomer);
     delete customerData._cleanyPaymentMetadata;
-    return {
+    var normalized = {
       id: row.id, createdAt: row.created_at, customer: customerData,
       formaPago: row.forma_pago || 'No especificado',
       items: Array.isArray(row.items) ? row.items : [],
       subtotal: Number(row.subtotal) || 0, total: Number(row.total) || 0,
       currency: row.currency || 'ARS', status: row.status || 'Recibido',
-      paymentSignature: metadata.paymentSignature || null,
-      priceCategory: metadata.priceCategory || null,
-      surchargeRate: Number(metadata.surchargeRate) || 0,
-      surchargeTotal: Number(metadata.surchargeTotal) || 0,
-      netSubtotal: Number(metadata.netSubtotal) || 0,
-      ivaRate: Number(metadata.ivaRate) || 21,
-      ivaIncludedTotal: Number(metadata.ivaIncludedTotal) || 0,
-      ivaIncluded: metadata.ivaIncluded !== false,
       cloudSynced: true
     };
+    if (metadata && typeof metadata === 'object') {
+      normalized.paymentSignature = metadata.paymentSignature || null;
+      normalized.priceCategory = metadata.priceCategory || null;
+      normalized.surchargeRate = Number(metadata.surchargeRate) || 0;
+      normalized.surchargeTotal = Number(metadata.surchargeTotal) || 0;
+      if (metadata.netSubtotal !== null && metadata.netSubtotal !== undefined) {
+        normalized.netSubtotal = Number(metadata.netSubtotal) || 0;
+      }
+      if (metadata.ivaIncludedTotal !== null && metadata.ivaIncludedTotal !== undefined) {
+        normalized.ivaIncludedTotal = Number(metadata.ivaIncludedTotal) || 0;
+      }
+      if (metadata.ivaRate !== undefined) normalized.ivaRate = Number(metadata.ivaRate) || 21;
+      if (metadata.ivaIncluded !== undefined) normalized.ivaIncluded = metadata.ivaIncluded === true;
+    }
+    return normalized;
   }
 
   async function syncOrder(order) {
