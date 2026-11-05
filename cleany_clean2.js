@@ -164,6 +164,8 @@ function renderProducts(items) {
         const imageMarkup = imageData
             ? '<img src="' + escapeHtml(imageData) + '" alt="' + escapeHtml(prod.name) + '" loading="lazy" class="h-full w-full object-contain p-2">'
             : '<i class="fa-solid ' + iconClass + ' transform group-hover:scale-110 transition-transform"></i>';
+        const cashPrice = Number(prod.priceCash ?? prod.price) || 0;
+        const accountPrice = Number(prod.priceAccount ?? cashPrice) || 0;
         const stockKnown = prod.stock !== null && prod.stock !== undefined && Number.isFinite(Number(prod.stock));
         const stock = stockKnown ? Math.max(0, Math.floor(Number(prod.stock))) : null;
         const soldOut = stock === 0;
@@ -181,9 +183,15 @@ function renderProducts(items) {
                 <p class="text-slate-400 text-xs mb-4">${escapeHtml(prod.description || '')}</p>
             </div>
             <div>
-                <div class="flex justify-between items-center mb-4">
-                    <span class="text-xs text-slate-400">Precio</span>
-                    <span class="text-xl font-extrabold text-cyan-300">${moneyARS(prod.price)}</span>
+                <div class="mb-4 space-y-2">
+                    <div class="flex items-center justify-between gap-3">
+                        <span class="text-xs text-slate-400">Precio al contado</span>
+                        <span class="text-lg font-extrabold text-cyan-300">${moneyARS(cashPrice)}</span>
+                    </div>
+                    <div class="flex items-center justify-between gap-3 border-t border-slate-700/60 pt-2">
+                        <span class="text-xs text-slate-400">Precio en cuenta corriente</span>
+                        <span class="text-base font-bold text-cyan-300">${moneyARS(accountPrice)}</span>
+                    </div>
                 </div>
                 ${stockText}
                 <button type="button" onclick="addToCart(${Number(prod.id)})" ${soldOut ? 'disabled' : ''} class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-cyan-500 hover:text-slate-950 text-cyan-300 font-semibold text-sm transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-40">
@@ -196,6 +204,18 @@ function renderProducts(items) {
 
 function moneyARS(value) {
     return '$' + (Number(value) || 0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+}
+
+function selectedPriceCategory() {
+    const payment = document.querySelector('input[name="formaPago"]:checked');
+    return payment && payment.value === 'Cuenta Corriente' ? 'cuentaCorriente' : 'contado';
+}
+
+function priceForPayment(item, priceCategory) {
+    const cashPrice = Number(item.priceCash ?? item.price) || 0;
+    const accountValue = Number(item.priceAccount ?? cashPrice);
+    const accountPrice = Number.isFinite(accountValue) && accountValue >= 0 ? accountValue : cashPrice;
+    return priceCategory === 'cuentaCorriente' ? accountPrice : cashPrice;
 }
 
 function isSafeImageDataURI(value) {
@@ -212,14 +232,20 @@ function applySiteSettings(settings) {
             const id = Number(saved.id);
             const original = defaults.get(id) || {};
             const category = saved.category === 'servicios' ? 'servicios' : 'productos';
-            const price = Number(saved.price);
+            const legacyPrice = Number(saved.price);
+            const rawCashPrice = saved.priceCash === undefined ? legacyPrice : Number(saved.priceCash);
+            const rawAccountPrice = saved.priceAccount === undefined ? rawCashPrice : Number(saved.priceAccount);
+            const priceCash = Number.isFinite(rawCashPrice) && rawCashPrice >= 0 ? rawCashPrice : Number(original.price) || 0;
+            const priceAccount = Number.isFinite(rawAccountPrice) && rawAccountPrice >= 0 ? rawAccountPrice : priceCash;
             const stock = saved.stock === null || saved.stock === undefined || saved.stock === ''
                 ? null : Math.max(0, Math.floor(Number(saved.stock) || 0));
             return {
                 id: Number.isFinite(id) && id > 0 ? id : index + 1,
                 name: String(saved.name || original.name || 'Nuevo producto').slice(0, 120),
                 category: category,
-                price: Number.isFinite(price) && price >= 0 ? price : Number(original.price) || 0,
+                price: priceCash,
+                priceCash: priceCash,
+                priceAccount: priceAccount,
                 stock: stock,
                 rating: String(saved.rating || original.rating || 'Nuevo').slice(0, 12),
                 icon: /^fa-[a-z0-9-]+$/i.test(String(saved.icon || original.icon || '')) ? String(saved.icon || original.icon) : 'fa-box-open',
@@ -299,7 +325,15 @@ function addToCart(productId) {
     if (existingItem) {
         existingItem.quantity += 1;
     } else {
-        cart.push({ ...product, quantity: 1 });
+        const priceCash = Number(product.priceCash ?? product.price) || 0;
+        const priceAccount = Number(product.priceAccount ?? priceCash) || 0;
+        cart.push({
+            ...product,
+            priceCash: priceCash,
+            priceAccount: priceAccount,
+            price: selectedPriceCategory() === 'cuentaCorriente' ? priceAccount : priceCash,
+            quantity: 1
+        });
     }
 
     updateCartUI();
@@ -337,7 +371,10 @@ function updateCartUI() {
         listContainer.innerHTML = `<p class="text-slate-400 text-sm text-center py-8">Tu carrito está vacío. Agrega productos o servicios para continuar.</p>`;
     } else {
         listContainer.innerHTML = '';
+        const priceCategory = selectedPriceCategory();
         cart.forEach(item => {
+            const unitPrice = priceForPayment(item, priceCategory);
+            item.price = unitPrice;
             const row = document.createElement('div');
             row.className = "flex items-center justify-between bg-slate-800/50 p-3 rounded-xl border border-slate-700/50";
             row.innerHTML = `
@@ -347,7 +384,7 @@ function updateCartUI() {
                     </div>
                     <div>
                         <h4 class="text-sm font-semibold text-white">${item.name}</h4>
-                        <span class="text-xs text-cyan-300">$${item.price.toLocaleString()} c/u</span>
+                        <span class="text-xs text-cyan-300">${moneyARS(unitPrice)} c/u · ${priceCategory === 'cuentaCorriente' ? 'Cuenta corriente' : 'Contado'}</span>
                     </div>
                 </div>
 
@@ -361,7 +398,7 @@ function updateCartUI() {
         });
     }
 
-    const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const total = cart.reduce((acc, item) => acc + (priceForPayment(item, selectedPriceCategory()) * item.quantity), 0);
     const subtotalEl = document.getElementById('subtotalPrice');
     const totalEl = document.getElementById('totalPrice');
     
@@ -387,7 +424,23 @@ async function handleFormSubmit(event) {
 
     const getValue = id => document.getElementById(id)?.value?.trim() || '';
     const formaPagoEl = document.querySelector('input[name="formaPago"]:checked');
-    const total = cart.reduce((acc, item) => acc + (Number(item.price) * Number(item.quantity)), 0);
+    const priceCategory = selectedPriceCategory();
+    const orderItems = cart.map(item => {
+        const priceCash = Number(item.priceCash ?? item.price) || 0;
+        const priceAccount = Number(item.priceAccount ?? priceCash) || 0;
+        const selectedPrice = priceForPayment(item, priceCategory);
+        return {
+            id: item.id,
+            name: item.name,
+            category: item.category,
+            price: selectedPrice,
+            priceCash: priceCash,
+            priceAccount: priceAccount,
+            priceCategory: priceCategory === 'cuentaCorriente' ? 'Cuenta corriente' : 'Al contado',
+            quantity: Number(item.quantity)
+        };
+    });
+    const total = orderItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     const order = {
         id: `CC-${Date.now().toString(36).toUpperCase()}`,
         createdAt: new Date().toISOString(),
@@ -405,10 +458,8 @@ async function handleFormSubmit(event) {
             cp: getValue('cp')
         },
         formaPago: formaPagoEl ? formaPagoEl.value : "No especificado",
-        items: cart.map(item => ({
-            id: item.id, name: item.name, category: item.category,
-            price: Number(item.price), quantity: Number(item.quantity)
-        })),
+        priceCategory: priceCategory === 'cuentaCorriente' ? 'Cuenta corriente' : 'Al contado',
+        items: orderItems,
         subtotal: total,
         total: total,
         currency: 'ARS',
@@ -451,6 +502,7 @@ async function handleFormSubmit(event) {
             <p><strong>Dirección:</strong> ${escapeHtml(order.customer.direccion)} ${escapeHtml(order.customer.piso)}, ${escapeHtml(order.customer.ciudad)}, ${escapeHtml(order.customer.provincia)} (${escapeHtml(order.customer.cp)})</p>
             <p><strong>Condición IVA:</strong> ${escapeHtml(order.customer.iva)}</p>
             <p><strong>Método de Pago:</strong> ${escapeHtml(order.formaPago)}</p>
+            <p><strong>Lista de precios:</strong> ${escapeHtml(order.priceCategory)}</p>
             <div class="border-t border-slate-700 pt-2 mt-2">
                 <p><strong>Total del pedido:</strong> <span class="text-cyan-300 font-bold text-sm">$ ${order.total.toLocaleString('es-AR')}</span></p>
             </div>
@@ -485,6 +537,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     createBubbles();
     createBubbleCurtainBubbles();
     initializeEdgeBubbles();
+    document.querySelectorAll('input[name="formaPago"]').forEach(function (input) {
+        input.addEventListener('change', updateCartUI);
+    });
     renderProducts(catalogData);
     if (window.CleanyOrders) {
         try {
