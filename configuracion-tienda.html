@@ -108,12 +108,12 @@
       logoImage: '',
       colors: { backgroundStart: '#0b132b', backgroundMiddle: '#1c2541', backgroundEnd: '#0a192f' },
       products: [
-        { id: 1, name: 'Detergente Bio-Acuático 5L', category: 'productos', price: 12500, stock: null, rating: '4.9', imageData: '', icon: 'fa-bottle-droplet', badge: 'Más Vendido', description: 'Fórmula concentrada biodegradable de alta espuma y aroma marino.' },
-        { id: 2, name: 'Limpiavidrios Cristal Brillo 1L', category: 'productos', price: 4800, stock: null, rating: '4.8', imageData: '', icon: 'fa-spray-can', badge: 'Efecto Espejo', description: 'Elimina manchas de agua y grasa instantáneamente sin dejar marcas.' },
-        { id: 3, name: 'Kit Limpieza Profunda Hogar', category: 'productos', price: 24900, stock: null, rating: '5.0', imageData: '', icon: 'fa-box-open', badge: 'Combo Ahorro', description: 'Incluye desinfectante, microfibras premium, lustrador y guantes.' },
-        { id: 4, name: 'Servicio Limpieza Residencia (4h)', category: 'servicios', price: 35000, stock: null, rating: '4.9', imageData: '', icon: 'fa-house-chimney-window', badge: 'Servicio VIP', description: 'Atención especializada con insumos y maquinarias Cleany Clean.' },
-        { id: 5, name: 'Desinfección de Tapizados y Sofás', category: 'servicios', price: 28000, stock: null, rating: '4.7', imageData: '', icon: 'fa-couch', badge: 'Anti-Ácaros', description: 'Extracción e inyección a vapor para sillones, colchones y alfombras.' },
-        { id: 6, name: 'Desinfectante Amonio Cuaternario 5L', category: 'productos', price: 15200, stock: null, rating: '4.9', imageData: '', icon: 'fa-shield-virus', badge: 'Grado Médico', description: 'Elimina el 99.9% de bacterias y virus en todo tipo de pisos y superficies.' }
+        { id: 1, name: 'Detergente Bio-Acuático 5L', category: 'productos', price: 12500, priceCash: 12500, priceAccount: 12500, stock: null, rating: '4.9', imageData: '', icon: 'fa-bottle-droplet', badge: 'Más Vendido', description: 'Fórmula concentrada biodegradable de alta espuma y aroma marino.' },
+        { id: 2, name: 'Limpiavidrios Cristal Brillo 1L', category: 'productos', price: 4800, priceCash: 4800, priceAccount: 4800, stock: null, rating: '4.8', imageData: '', icon: 'fa-spray-can', badge: 'Efecto Espejo', description: 'Elimina manchas de agua y grasa instantáneamente sin dejar marcas.' },
+        { id: 3, name: 'Kit Limpieza Profunda Hogar', category: 'productos', price: 24900, priceCash: 24900, priceAccount: 24900, stock: null, rating: '5.0', imageData: '', icon: 'fa-box-open', badge: 'Combo Ahorro', description: 'Incluye desinfectante, microfibras premium, lustrador y guantes.' },
+        { id: 4, name: 'Servicio Limpieza Residencia (4h)', category: 'servicios', price: 35000, priceCash: 35000, priceAccount: 35000, stock: null, rating: '4.9', imageData: '', icon: 'fa-house-chimney-window', badge: 'Servicio VIP', description: 'Atención especializada con insumos y maquinarias Cleany Clean.' },
+        { id: 5, name: 'Desinfección de Tapizados y Sofás', category: 'servicios', price: 28000, priceCash: 28000, priceAccount: 28000, stock: null, rating: '4.7', imageData: '', icon: 'fa-couch', badge: 'Anti-Ácaros', description: 'Extracción e inyección a vapor para sillones, colchones y alfombras.' },
+        { id: 6, name: 'Desinfectante Amonio Cuaternario 5L', category: 'productos', price: 15200, priceCash: 15200, priceAccount: 15200, stock: null, rating: '4.9', imageData: '', icon: 'fa-shield-virus', badge: 'Grado Médico', description: 'Elimina el 99.9% de bacterias y virus en todo tipo de pisos y superficies.' }
       ]
     };
     const $ = id => document.getElementById(id);
@@ -229,14 +229,18 @@
       });
       const products = sourceProducts.map((p, index) => {
         const fallback = DEFAULT_SETTINGS.products.find(item => Number(item.id) === Number(p.id)) || {};
-        const parsedPrice = Number(p.price);
+        const legacyPrice = Number(p.price);
+        const parsedCashPrice = p.priceCash === undefined ? legacyPrice : Number(p.priceCash);
+        const parsedAccountPrice = p.priceAccount === undefined ? (p.priceCash === undefined ? legacyPrice : parsedCashPrice) : Number(p.priceAccount);
         let stock = (p.stock === null || p.stock === undefined || p.stock === '') ? null : Number(p.stock);
         if (!Number.isInteger(stock) || stock < 0) stock = null;
         return {
           id: Number(p.id) > 0 ? Number(p.id) : index + 1,
           name: String(p.name || fallback.name || 'Nuevo producto').slice(0, 120),
           category: p.category === 'servicios' ? 'servicios' : 'productos',
-          price: Number.isFinite(parsedPrice) && parsedPrice >= 0 ? parsedPrice : Number(fallback.price) || 0,
+          price: Number.isFinite(parsedCashPrice) && parsedCashPrice >= 0 ? parsedCashPrice : Number(fallback.price) || 0,
+          priceCash: Number.isFinite(parsedCashPrice) && parsedCashPrice >= 0 ? parsedCashPrice : Number(fallback.price) || 0,
+          priceAccount: Number.isFinite(parsedAccountPrice) && parsedAccountPrice >= 0 ? parsedAccountPrice : (Number.isFinite(parsedCashPrice) && parsedCashPrice >= 0 ? parsedCashPrice : Number(fallback.price) || 0),
           stock: stock,
           description: String(p.description || fallback.description || '').slice(0, 400),
           icon: /^fa-[a-z0-9-]+$/i.test(String(p.icon || fallback.icon || '')) ? String(p.icon || fallback.icon) : 'fa-box-open',
@@ -290,13 +294,16 @@
       settings.products = rows.map(row => {
         const previous = settings.products.find(item => Number(item.id) === Number(row.dataset.productId)) || {};
         const value = field => row.querySelector('[data-field="' + field + '"]').value;
-        const rawPrice = value('price').trim();
+        const rawPriceCash = value('priceCash').trim();
+        const rawPriceAccount = value('priceAccount').trim();
         const rawStock = value('stock').trim();
         return {
           id: Number(row.dataset.productId),
           name: value('name'),
           category: value('category') === 'servicios' ? 'servicios' : 'productos',
-          price: rawPrice === '' ? '' : Number(rawPrice),
+          price: rawPriceCash === '' ? '' : Number(rawPriceCash),
+          priceCash: rawPriceCash === '' ? '' : Number(rawPriceCash),
+          priceAccount: rawPriceAccount === '' ? '' : Number(rawPriceAccount),
           stock: rawStock === '' ? null : Number(rawStock),
           description: value('description'),
           icon: previous.icon || 'fa-box-open',
@@ -318,7 +325,8 @@
           '<div class="mb-4 flex flex-wrap items-start justify-between gap-3"><div><p class="font-bold text-cyan-200">Artículo #' + product.id + '</p><p class="text-xs text-slate-500">Se mostrará en el catálogo de la tienda</p></div><button type="button" data-remove class="rounded-lg border border-rose-400/30 px-3 py-2 text-xs font-bold text-rose-200 hover:bg-rose-400/10"><i class="fa-solid fa-trash mr-1"></i>Quitar</button></div>' +
           '<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">' +
             fieldMarkup('Nombre del producto/servicio','name',product.name,'text','required maxlength="120"') +
-            fieldMarkup('Precio (ARS)','price',product.price,'number','required min="0" step="0.01"') +
+            fieldMarkup('Precio al contado (ARS)','priceCash',product.priceCash ?? product.price,'number','required min="0" step="0.01"') +
+            fieldMarkup('Precio en cuenta corriente (ARS)','priceAccount',product.priceAccount ?? product.priceCash ?? product.price,'number','required min="0" step="0.01"') +
             fieldMarkup('Cantidad disponible','stock',product.stock === null ? '' : product.stock,'number','min="0" step="1" placeholder="Sin límite"') +
             '<label class="block"><span class="field-label">Tipo</span><select class="field" data-field="category"><option value="productos" ' + (product.category === 'productos' ? 'selected' : '') + '>Producto</option><option value="servicios" ' + (product.category === 'servicios' ? 'selected' : '') + '>Servicio</option></select></label>' +
             '<label class="block sm:col-span-2 lg:col-span-4"><span class="field-label">Descripción</span><textarea class="field" data-field="description" rows="2" maxlength="400">' + esc(product.description) + '</textarea></label>' +
@@ -395,11 +403,15 @@
         const previous = settings.products.find(item => Number(item.id) === Number(row.dataset.productId)) || {};
         const value = field => row.querySelector('[data-field="' + field + '"]').value;
         const rawStock = value('stock').trim();
+        const rawPriceCash = value('priceCash').trim();
+        const rawPriceAccount = value('priceAccount').trim();
         return {
           id: Number(row.dataset.productId),
           name: value('name').trim(),
           category: value('category') === 'servicios' ? 'servicios' : 'productos',
-          price: Number(value('price')),
+          price: Number(rawPriceCash),
+          priceCash: Number(rawPriceCash),
+          priceAccount: Number(rawPriceAccount),
           stock: rawStock === '' ? null : Number(rawStock),
           description: value('description').trim(),
           icon: previous.icon || 'fa-box-open',
@@ -411,7 +423,10 @@
       if (!products.length) throw new Error('Agregá al menos un producto o servicio al catálogo.');
       for (const product of products) {
         if (!product.name) throw new Error('Todos los artículos deben tener un nombre.');
-        if (String($('productsEditor').querySelector('[data-product-id="' + product.id + '"] [data-field="price"]').value).trim() === '' || !Number.isFinite(product.price) || product.price < 0) throw new Error('Revisá los precios: deben ser números mayores o iguales a cero.');
+        const row = $('productsEditor').querySelector('[data-product-id="' + product.id + '"]');
+        const cashInput = row.querySelector('[data-field="priceCash"]').value.trim();
+        const accountInput = row.querySelector('[data-field="priceAccount"]').value.trim();
+        if (cashInput === '' || !Number.isFinite(product.priceCash) || product.priceCash < 0 || accountInput === '' || !Number.isFinite(product.priceAccount) || product.priceAccount < 0) throw new Error('Completá los dos precios con valores numéricos mayores o iguales a cero.');
         if (product.stock !== null && (!Number.isInteger(product.stock) || product.stock < 0)) throw new Error('La cantidad disponible debe ser un entero mayor o igual a cero, o quedar vacía.');
       }
       const ids = products.map(p => p.id);
@@ -467,7 +482,7 @@
     $('addProduct').addEventListener('click', () => {
       snapshotProductInputs();
       const nextId = Math.max(0, ...settings.products.map(p => Number(p.id) || 0)) + 1;
-      settings.products.push({ id: nextId, name: 'Nuevo producto', category: 'productos', price: 0, stock: null, description: '', icon: 'fa-box-open', badge: 'Nuevo', rating: 'Nuevo' });
+      settings.products.push({ id: nextId, name: 'Nuevo producto', category: 'productos', price: 0, priceCash: 0, priceAccount: 0, stock: null, description: '', icon: 'fa-box-open', badge: 'Nuevo', rating: 'Nuevo' });
       renderProducts();
       setStatus('Artículo nuevo añadido al borrador. Completá los datos y guardá.', false);
     });
