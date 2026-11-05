@@ -253,7 +253,7 @@
         ${items.map(item=>'<tr><td>'+esc(item.quantity)+'</td><td>'+esc(item.name)+'</td><td>'+money(item.price)+'</td><td>'+money((Number(item.price)||0)*(Number(item.quantity)||0))+'</td></tr>').join('')}
         </tbody></table></div>
         <div class="ml-auto mt-6 max-w-xs space-y-2 text-sm"><div class="flex justify-between"><span>Subtotal</span><strong>${money(subtotal)}</strong></div><div class="flex justify-between border-t-2 border-slate-800 pt-3 text-lg"><span>TOTAL</span><strong>${money(o.total)}</strong></div></div>
-        <div class="mt-8 border-t border-slate-300 pt-4 text-xs text-slate-500"><p>Forma de pago: ${esc(o.formaPago)}</p><p class="mt-2 font-bold">VISTA PREVIA NO FISCAL — NO ES UN COMPROBANTE AUTORIZADO</p><p>Sin CAE/CAEA ni numeración fiscal oficial.</p></div>`;
+        <div class="mt-8 border-t border-slate-300 pt-4 text-xs text-slate-500"><p>Forma de pago: ${esc(o.formaPago)}</p><p>Lista de precios aplicada: ${esc(o.priceCategory || (o.formaPago === 'Cuenta Corriente' ? 'Cuenta corriente' : 'Al contado'))}</p><p class="mt-2 font-bold">VISTA PREVIA NO FISCAL — NO ES UN COMPROBANTE AUTORIZADO</p><p>Sin CAE/CAEA ni numeración fiscal oficial.</p></div>`;
     }
   </script>
 </body>
